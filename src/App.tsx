@@ -311,9 +311,13 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
-    setTimeout(() => {
+    const scrollToBottom = () => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+    };
+    scrollToBottom();
+    const t1 = setTimeout(scrollToBottom, 100);
+    const t2 = setTimeout(scrollToBottom, 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [msgs]);
 
   const handleReply = (msg: Message) => {
@@ -430,7 +434,7 @@ const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0;}textarea,input{font-family:'DM Sans',sans-serif;}textarea:focus,input:focus{outline:none;}`}</style>
-      <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: chatBg }}>
+      <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: chatBg }}>
 
         <div style={{ background: "white", borderBottom: `1px solid ${BR}`, height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
           <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 500, color: uc(other) }}>{other}</div>
