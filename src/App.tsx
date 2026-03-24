@@ -135,7 +135,6 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
   const light = ul(msg.sender);
   const reactions = Object.entries(msg.reactions || {}).filter(([, u]) => u.length > 0);
 
-  // Touch handlers for swipe to reply
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -155,9 +154,7 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
     if (Math.abs(dx) > 50 && !swipeTriggered.current) {
       swipeTriggered.current = true;
       onReply(msg);
-      try {
-        if (navigator.vibrate) navigator.vibrate(30);
-      } catch (e) {}
+      try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
     }
   };
 
@@ -177,15 +174,8 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
     >
       {!mine && <div style={{ fontSize: 11, color, fontWeight: 500, marginBottom: 3, paddingLeft: 4 }}>{msg.sender}</div>}
 
-      {/* Reply quote */}
       {msg.replyTo && (
-        <div style={{
-          maxWidth: "75%", marginBottom: 4,
-          background: mine ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.05)",
-          borderRadius: 10, padding: "5px 10px",
-          borderLeft: `3px solid ${uc(msg.replyTo.sender)}`,
-          cursor: "default"
-        }}>
+        <div style={{ maxWidth: "75%", marginBottom: 4, background: mine ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.05)", borderRadius: 10, padding: "5px 10px", borderLeft: `3px solid ${uc(msg.replyTo.sender)}`, cursor: "default" }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: uc(msg.replyTo.sender), marginBottom: 2 }}>
             {msg.replyTo.sender === user ? "You" : msg.replyTo.sender}
           </div>
@@ -195,21 +185,13 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
         </div>
       )}
 
-      <div style={{
-        display: "flex", alignItems: "flex-end", gap: 5,
-        flexDirection: mine ? "row-reverse" : "row",
-        maxWidth: "75%", width: "auto",
-        transform: `translateX(${swipeX}px)`,
-        transition: swiping ? "none" : "transform 0.2s ease"
-      }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 5, flexDirection: mine ? "row-reverse" : "row", maxWidth: "75%", width: "auto", transform: `translateX(${swipeX}px)`, transition: swiping ? "none" : "transform 0.2s ease" }}>
         {hovered && mine && (
           <button onClick={() => onDelete(msg.id)}
             style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#ccc", padding: "0 2px", flexShrink: 0 }}>✕</button>
         )}
-        {/* Reply button on hover (desktop) */}
         {hovered && (
-          <button onClick={() => onReply(msg)}
-            title="Reply"
+          <button onClick={() => onReply(msg)} title="Reply"
             style={{ width: 22, height: 22, borderRadius: "50%", background: "white", border: "1px solid #eee", cursor: "pointer", fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             ↩
           </button>
@@ -368,13 +350,14 @@ export default function App() {
     }
 
     setSending(false);
-setTimeout(() => {
-  inputRef.current?.focus();
-  if (inputRef.current) {
-    inputRef.current.scrollIntoView({ block: "nearest" });
-  }
-}, 50);
-await updateSeen();
+    setTimeout(() => {
+      inputRef.current?.focus();
+      if (inputRef.current) {
+        inputRef.current.scrollIntoView({ block: "nearest" });
+      }
+    }, 50);
+    await updateSeen();
+  }; // ✅ closing brace was missing before!
 
   const deleteMsg = async (id: string) => {
     try {
@@ -486,4 +469,4 @@ await updateSeen();
       </div>
     </>
   );
-}}
+}
