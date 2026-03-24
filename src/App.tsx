@@ -328,7 +328,11 @@ export default function App() {
     };
   }, [user]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [msgs]);
 
   const handleReply = (msg: Message) => {
     setReplyTo({ id: msg.id, sender: msg.sender, text: msg.text, imageData: msg.imageData });
@@ -364,9 +368,13 @@ export default function App() {
     }
 
     setSending(false);
-    inputRef.current?.focus();
-    await updateSeen();
-  };
+setTimeout(() => {
+  inputRef.current?.focus();
+  if (inputRef.current) {
+    inputRef.current.scrollIntoView({ block: "nearest" });
+  }
+}, 50);
+await updateSeen();
 
   const deleteMsg = async (id: string) => {
     try {
