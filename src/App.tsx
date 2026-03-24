@@ -206,9 +206,9 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
           {msg.imageData && <img src={msg.imageData} alt="" style={{ maxWidth: "100%", borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0 }} />}
           {msg.gifUrl && <img src={msg.gifUrl} alt="" style={{ maxWidth: 200, borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0 }} />}
           {msg.text && (
-            <div style={{ background: mine ? color : light, color: mine ? "white" : TXT, padding: "9px 14px", borderRadius: 18, borderBottomRightRadius: mine ? 4 : 18, borderBottomLeftRadius: mine ? 18 : 4, fontSize: 14, lineHeight: 1.5, wordBreak: "break-word" }}>
-              {msg.text}
-            </div>
+            <div style={{ background: mine ? color : light, color: mine ? "white" : TXT, padding: "9px 14px", borderRadius: 18, borderBottomRightRadius: mine ? 4 : 18, borderBottomLeftRadius: mine ? 18 : 4, fontSize: 14, lineHeight: 1.5, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
+            {msg.text}
+          </div>
           )}
         </div>
       </div>
@@ -311,9 +311,9 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
-    if (document.activeElement !== inputRef.current) {
+    setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    }, 100);
   }, [msgs]);
 
   const handleReply = (msg: Message) => {
