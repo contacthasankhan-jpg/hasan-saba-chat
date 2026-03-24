@@ -29,6 +29,16 @@ const fd = (ts: number) => {
   return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
 };
 
+// Returns true if the text is purely emoji characters (up to 6)
+const isEmojiOnly = (text: string): boolean => {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  const emojiRegex = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F\s]+$/u;
+  const countRegex = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu;
+  const matches = trimmed.match(countRegex);
+  return emojiRegex.test(trimmed) && matches !== null && matches.length <= 6;
+};
+
 function ping() {
   try {
     const a = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -114,10 +124,11 @@ function ReplyPreview({ replyTo, onCancel, user }: { replyTo: ReplyTo; onCancel:
   );
 }
 
-function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
+function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onReply }: {
   msg: Message;
   user: string;
   isSeenLast: boolean;
+  isFirstInRun: boolean;
   onReact: (id: string, emoji: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onReply: (msg: Message) => void;
@@ -134,6 +145,11 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
   const color = uc(msg.sender);
   const light = ul(msg.sender);
   const reactions = Object.entries(msg.reactions || {}).filter(([, u]) => u.length > 0);
+  const emojiOnly = msg.text ? isEmojiOnly(msg.text) : false;
+
+  // Emoji count for sizing: 1 = 48px, 2-3 = 40px, 4-6 = 32px
+  const emojiCount = emojiOnly && msg.text ? (msg.text.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu) || []).length : 0;
+  const emojiFontSize = emojiCount === 1 ? 52 : emojiCount <= 3 ? 42 : 34;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -172,7 +188,10 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {!mine && <div style={{ fontSize: 11, color, fontWeight: 500, marginBottom: 3, paddingLeft: 4 }}>{msg.sender}</div>}
+      {/* Only show sender name on the first message in a consecutive run */}
+      {!mine && isFirstInRun && (
+        <div style={{ fontSize: 11, color, fontWeight: 500, marginBottom: 3, paddingLeft: 4 }}>{msg.sender}</div>
+      )}
 
       {msg.replyTo && (
         <div style={{ maxWidth: "75%", marginBottom: 4, background: mine ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.05)", borderRadius: 10, padding: "5px 10px", borderLeft: `3px solid ${uc(msg.replyTo.sender)}`, cursor: "default" }}>
@@ -185,31 +204,48 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 5, flexDirection: mine ? "row-reverse" : "row", maxWidth: "75%", width: "auto", transform: `translateX(${swipeX}px)`, transition: swiping ? "none" : "transform 0.2s ease" }}>
-        {hovered && mine && (
-          <button onClick={() => onDelete(msg.id)}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#ccc", padding: "0 2px", flexShrink: 0 }}>✕</button>
-        )}
-        {hovered && (
-          <button onClick={() => onReply(msg)} title="Reply"
-            style={{ width: 22, height: 22, borderRadius: "50%", background: "white", border: "1px solid #eee", cursor: "pointer", fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            ↩
-          </button>
-        )}
-        {hovered && (
-          <button onClick={e => { e.stopPropagation(); setPickerOpen(v => !v); }}
-            style={{ width: 22, height: 22, borderRadius: "50%", background: "white", border: "1px solid #eee", cursor: "pointer", fontSize: 13, color: "#aaa", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            +
-          </button>
-        )}
-        <div style={{ maxWidth: "100%", minWidth: 0 }}>
-          {msg.imageData && <img src={msg.imageData} alt="" style={{ maxWidth: "100%", borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0 }} />}
-          {msg.gifUrl && <img src={msg.gifUrl} alt="" style={{ maxWidth: 200, borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0 }} />}
-          {msg.text && (
-            <div style={{ background: mine ? color : light, color: mine ? "white" : TXT, padding: "9px 14px", borderRadius: 18, borderBottomRightRadius: mine ? 4 : 18, borderBottomLeftRadius: mine ? 18 : 4, fontSize: 14, lineHeight: 1.5, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
-            {msg.text}
-          </div>
+      {/* Outer row: timestamp on far edge, bubble in middle */}
+      <div style={{ display: "flex", flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end", gap: 6 }}>
+
+        {/* Timestamp on outer edge */}
+        <span style={{ fontSize: 10, color: "#c0b0a8", flexShrink: 0, paddingBottom: 2, whiteSpace: "nowrap" }}>
+          {ft(msg.ts)}
+        </span>
+
+        {/* Bubble row with action buttons */}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 5, flexDirection: mine ? "row-reverse" : "row", maxWidth: "min(68vw, 300px)", transform: `translateX(${swipeX}px)`, transition: swiping ? "none" : "transform 0.2s ease" }}>
+          {hovered && mine && (
+            <button onClick={() => onDelete(msg.id)}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#ccc", padding: "0 2px", flexShrink: 0 }}>✕</button>
           )}
+          {hovered && (
+            <button onClick={() => onReply(msg)} title="Reply"
+              style={{ width: 22, height: 22, borderRadius: "50%", background: "white", border: "1px solid #eee", cursor: "pointer", fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              ↩
+            </button>
+          )}
+          {hovered && (
+            <button onClick={e => { e.stopPropagation(); setPickerOpen(v => !v); }}
+              style={{ width: 22, height: 22, borderRadius: "50%", background: "white", border: "1px solid #eee", cursor: "pointer", fontSize: 13, color: "#aaa", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              +
+            </button>
+          )}
+          <div style={{ maxWidth: "100%", minWidth: 0 }}>
+            {msg.imageData && <img src={msg.imageData} alt="" style={{ maxWidth: "100%", borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0 }} />}
+            {msg.gifUrl && <img src={msg.gifUrl} alt="" style={{ maxWidth: 200, borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0 }} />}
+            {msg.text && (
+              emojiOnly ? (
+                // Big emoji — no bubble, just large text
+                <div style={{ fontSize: emojiFontSize, lineHeight: 1.15, padding: "2px 4px", userSelect: "none" }}>
+                  {msg.text}
+                </div>
+              ) : (
+                <div style={{ background: mine ? color : light, color: mine ? "white" : TXT, padding: "9px 14px", borderRadius: 18, borderBottomRightRadius: mine ? 4 : 18, borderBottomLeftRadius: mine ? 18 : 4, fontSize: 14, lineHeight: 1.5, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
+                  {msg.text}
+                </div>
+              )
+            )}
+          </div>
         </div>
       </div>
 
@@ -223,6 +259,7 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
           ))}
         </div>
       )}
+
       {reactions.length > 0 && (
         <div style={{ display: "flex", gap: 3, marginTop: 4, flexWrap: "wrap", justifyContent: mine ? "flex-end" : "flex-start" }}>
           {reactions.map(([emoji, users]) => (
@@ -233,10 +270,11 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
           ))}
         </div>
       )}
-      <div style={{ fontSize: 10, color: "#c0b0a8", marginTop: 3, paddingLeft: mine ? 0 : 4, paddingRight: mine ? 4 : 0, display: "flex", alignItems: "center", gap: 4 }}>
-        {ft(msg.ts)}
-        {mine && <span style={{ color: isSeenLast ? color : "#d0c0b8", fontWeight: isSeenLast ? 500 : 400 }}>{isSeenLast ? "✓✓ Seen" : "✓"}</span>}
-      </div>
+
+      {/* Seen receipt — independent of timestamp */}
+      {isSeenLast && mine && (
+        <div style={{ fontSize: 10, color, fontWeight: 500, marginTop: 2, paddingRight: 4 }}>✓✓ Seen</div>
+      )}
     </div>
   );
 }
@@ -256,6 +294,7 @@ export default function App() {
   const countRef = useRef(0);
   const userRef = useRef<string | null>(null);
   const subRef = useRef<any>(null);
+  const inputFocusedRef = useRef(false);
 
   useEffect(() => { userRef.current = user; }, [user]);
 
@@ -310,14 +349,11 @@ export default function App() {
     };
   }, [user]);
 
+  // Only autoscroll when keyboard is open
   useEffect(() => {
-    const scrollToBottom = () => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-    scrollToBottom();
-    const t1 = setTimeout(scrollToBottom, 100);
-    const t2 = setTimeout(scrollToBottom, 300);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    if (!inputFocusedRef.current) return;
+    const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    return () => clearTimeout(t);
   }, [msgs]);
 
   const handleReply = (msg: Message) => {
@@ -356,12 +392,10 @@ export default function App() {
     setSending(false);
     setTimeout(() => {
       inputRef.current?.focus();
-      if (inputRef.current) {
-        inputRef.current.scrollIntoView({ block: "nearest" });
-      }
+      if (inputRef.current) inputRef.current.scrollIntoView({ block: "nearest" });
     }, 50);
     await updateSeen();
-  }; // ✅ closing brace was missing before!
+  };
 
   const deleteMsg = async (id: string) => {
     try {
@@ -377,7 +411,7 @@ export default function App() {
     try {
       const msg = msgs.find(m => m.id === msgId);
       if (!msg) return;
-      const reactions = {...msg.reactions };
+      const reactions = { ...msg.reactions };
       if (!reactions[emoji]) reactions[emoji] = [];
       if (reactions[emoji].includes(user!)) {
         reactions[emoji] = reactions[emoji].filter(u => u !== user);
@@ -403,21 +437,28 @@ export default function App() {
 
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-  if (isMobile) return; // on mobile, Enter always makes new line
-  if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
-    e.preventDefault();
-    send();
-  }
-  // Ctrl+Enter makes new line on PC (default behaviour, no need to handle)
-};
+  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isMobile) return;
+    if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+      e.preventDefault();
+      send();
+    }
+  };
 
-  const grouped: Array<{ type: string; label?: string; key?: string; msg?: Message }> = [];
+  // Build grouped list and compute isFirstInRun per message
+  const grouped: Array<{ type: string; label?: string; key?: string; msg?: Message; isFirstInRun?: boolean }> = [];
   let lastDay: string | null = null;
+  let lastSender: string | null = null;
   for (const msg of msgs) {
     const day = fd(msg.ts);
-    if (day !== lastDay) { grouped.push({ type: "day", label: day, key: `d${msg.ts}` }); lastDay = day; }
-    grouped.push({ type: "msg", msg });
+    if (day !== lastDay) {
+      grouped.push({ type: "day", label: day, key: `d${msg.ts}` });
+      lastDay = day;
+      lastSender = null; // reset run on new day
+    }
+    const isFirstInRun = msg.sender !== lastSender;
+    grouped.push({ type: "msg", msg, isFirstInRun });
+    lastSender = msg.sender;
   }
 
   const myMsgs = msgs.filter(m => m.sender === user);
@@ -456,7 +497,16 @@ const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
           {grouped.map(item => item.type === "day" ? (
             <div key={item.key} style={{ textAlign: "center", fontSize: 11, color: MUT, letterSpacing: "0.08em", textTransform: "uppercase", margin: "4px 0" }}>{item.label}</div>
           ) : (
-            <MsgItem key={item.msg!.id} msg={item.msg!} user={user} isSeenLast={item.msg!.id === lastSeenId} onReact={toggleReaction} onDelete={deleteMsg} onReply={handleReply} />
+            <MsgItem
+              key={item.msg!.id}
+              msg={item.msg!}
+              user={user}
+              isSeenLast={item.msg!.id === lastSeenId}
+              isFirstInRun={item.isFirstInRun!}
+              onReact={toggleReaction}
+              onDelete={deleteMsg}
+              onReply={handleReply}
+            />
           ))}
           <div ref={bottomRef} />
         </div>
@@ -469,9 +519,20 @@ const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
             style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${BR}`, background: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>
             📷
           </button>
-          <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-            placeholder={`Message ${other}…`} rows={1}
-            style={{ flex: 1, border: `1.5px solid ${BR}`, borderRadius: 20, padding: "9px 14px", fontSize: 14, color: TXT, background: chatBg, resize: "none", minHeight: 38, maxHeight: 100, lineHeight: 1.4 }} />
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKey}
+            onFocus={() => {
+              inputFocusedRef.current = true;
+              setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 150);
+            }}
+            onBlur={() => { inputFocusedRef.current = false; }}
+            placeholder={`Message ${other}…`}
+            rows={1}
+            style={{ flex: 1, border: `1.5px solid ${BR}`, borderRadius: 20, padding: "9px 14px", fontSize: 14, color: TXT, background: chatBg, resize: "none", minHeight: 38, maxHeight: 100, lineHeight: 1.4 }}
+          />
           <button onMouseDown={e => e.preventDefault()} onClick={() => send()} disabled={!input.trim() || sending}
             style={{ width: 38, height: 38, borderRadius: "50%", background: uc(user), border: "none", cursor: input.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: input.trim() ? 1 : 0.5, transition: "opacity 0.2s" }}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
