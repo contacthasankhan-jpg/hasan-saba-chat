@@ -59,6 +59,13 @@ async function compress(file: File): Promise<string> {
   });
 }
 
+interface ReplyTo {
+  id: string;
+  sender: string;
+  text: string | null;
+  imageData: string | null;
+}
+
 interface Message {
   id: string;
   sender: string;
@@ -67,6 +74,7 @@ interface Message {
   gifUrl: string | null;
   reactions: Record<string, string[]>;
   ts: number;
+  replyTo?: ReplyTo | null;
 }
 
 function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
@@ -90,23 +98,121 @@ function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
   );
 }
 
-function MsgItem({ msg, user, isSeenLast, onReact, onDelete }: { msg: Message; user: string; isSeenLast: boolean; onReact: (id: string, emoji: string) => Promise<void>; onDelete: (id: string) => Promise<void> }) {
+function ReplyPreview({ replyTo, onCancel, user }: { replyTo: ReplyTo; onCancel: () => void; user: string }) {
+  const color = uc(replyTo.sender);
+  return (
+    <div style={{ background: "white", borderTop: `1px solid ${BR}`, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+      <div style={{ width: 3, borderRadius: 2, background: color, alignSelf: "stretch", flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color, marginBottom: 2 }}>{replyTo.sender === user ? "You" : replyTo.sender}</div>
+        <div style={{ fontSize: 12, color: MUT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {replyTo.imageData ? "📷 Photo" : replyTo.text || ""}
+        </div>
+      </div>
+      <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: MUT, padding: "0 4px", flexShrink: 0 }}>✕</button>
+    </div>
+  );
+}
+
+function MsgItem({ msg, user, isSeenLast, onReact, onDelete, onReply }: {
+  msg: Message;
+  user: string;
+  isSeenLast: boolean;
+  onReact: (id: string, emoji: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onReply: (msg: Message) => void;
+}) {
   const [hovered, setHovered] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [swipeX, setSwipeX] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const swipeTriggered = useRef(false);
+
   const mine = msg.sender === user;
   const color = uc(msg.sender);
   const light = ul(msg.sender);
   const reactions = Object.entries(msg.reactions || {}).filter(([, u]) => u.length > 0);
 
+  // Touch handlers for swipe to reply
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    swipeTriggered.current = false;
+    setSwiping(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (Math.abs(dy) > Math.abs(dx)) { setSwiping(false); setSwipeX(0); return; }
+    if (mine && dx < 0) {
+      setSwipeX(Math.max(dx, -70));
+    } else if (!mine && dx > 0) {
+      setSwipeX(Math.min(dx, 70));
+    }
+    if (Math.abs(dx) > 50 && !swipeTriggered.current) {
+      swipeTriggered.current = true;
+      onReply(msg);
+      try {
+        if (navigator.vibrate) navigator.vibrate(30);
+      } catch (e) {}
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setSwipeX(0);
+    setSwiping(false);
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginBottom: 2, width: "100%", boxSizing: "border-box", padding: "0 8px" }}
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginBottom: 2, width: "100%", boxSizing: "border-box", padding: "0 8px" }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setPickerOpen(false); }}>
+      onMouseLeave={() => { setHovered(false); setPickerOpen(false); }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {!mine && <div style={{ fontSize: 11, color, fontWeight: 500, marginBottom: 3, paddingLeft: 4 }}>{msg.sender}</div>}
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 5, flexDirection: mine ? "row-reverse" : "row", maxWidth: "75%", width: "auto" }}>
+
+      {/* Reply quote */}
+      {msg.replyTo && (
+        <div style={{
+          maxWidth: "75%", marginBottom: 4,
+          background: mine ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.05)",
+          borderRadius: 10, padding: "5px 10px",
+          borderLeft: `3px solid ${uc(msg.replyTo.sender)}`,
+          cursor: "default"
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: uc(msg.replyTo.sender), marginBottom: 2 }}>
+            {msg.replyTo.sender === user ? "You" : msg.replyTo.sender}
+          </div>
+          <div style={{ fontSize: 12, color: MUT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {msg.replyTo.imageData ? "📷 Photo" : msg.replyTo.text || ""}
+          </div>
+        </div>
+      )}
+
+      <div style={{
+        display: "flex", alignItems: "flex-end", gap: 5,
+        flexDirection: mine ? "row-reverse" : "row",
+        maxWidth: "75%", width: "auto",
+        transform: `translateX(${swipeX}px)`,
+        transition: swiping ? "none" : "transform 0.2s ease"
+      }}>
         {hovered && mine && (
           <button onClick={() => onDelete(msg.id)}
             style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#ccc", padding: "0 2px", flexShrink: 0 }}>✕</button>
+        )}
+        {/* Reply button on hover (desktop) */}
+        {hovered && (
+          <button onClick={() => onReply(msg)}
+            title="Reply"
+            style={{ width: 22, height: 22, borderRadius: "50%", background: "white", border: "1px solid #eee", cursor: "pointer", fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            ↩
+          </button>
         )}
         {hovered && (
           <button onClick={e => { e.stopPropagation(); setPickerOpen(v => !v); }}
@@ -124,6 +230,7 @@ function MsgItem({ msg, user, isSeenLast, onReact, onDelete }: { msg: Message; u
           )}
         </div>
       </div>
+
       {pickerOpen && (
         <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 3, padding: "4px 8px", background: "white", borderRadius: 22, border: "1px solid #eee", marginTop: 5, boxShadow: "0 2px 10px rgba(0,0,0,0.08)" }}>
           {EMOJIS.map(e => (
@@ -159,6 +266,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [seenOther, setSeenOther] = useState(0);
+  const [replyTo, setReplyTo] = useState<ReplyTo | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -177,7 +285,6 @@ export default function App() {
     if (!u) return;
     try {
       const { data: arr, error } = await supabase.from("messages").select("*").order("ts", { ascending: true });
-
       if (error) throw error;
       const messages = (arr || []) as Message[];
       if (notify && messages.length > countRef.current) {
@@ -186,13 +293,9 @@ export default function App() {
       }
       countRef.current = messages.length;
       setMsgs(messages);
-
       const otherUser = u === "Hasan" ? "Saba" : "Hasan";
       const { data: seenData, error: seenError } = await supabase.from("seen_status").select("last_seen").eq("username", otherUser).maybeSingle();
-
-      if (!seenError && seenData) {
-        setSeenOther(seenData.last_seen || 0);
-      }
+      if (!seenError && seenData) setSeenOther(seenData.last_seen || 0);
     } catch (e) {
       console.error("Error loading messages:", e);
       setMsgs([]);
@@ -203,10 +306,7 @@ export default function App() {
     const u = userRef.current;
     if (!u) return;
     try {
-      await supabase.from("seen_status").upsert(
-        { username: u, last_seen: Date.now() },
-        { onConflict: "username" }
-      );
+      await supabase.from("seen_status").upsert({ username: u, last_seen: Date.now() }, { onConflict: "username" });
     } catch (e) {
       console.error("Error updating seen status:", e);
     }
@@ -217,16 +317,10 @@ export default function App() {
     setLoading(true);
     loadMsgs().finally(() => setLoading(false));
     updateSeen();
-
     const pi = setInterval(() => loadMsgs(true), 3000);
     const si = setInterval(updateSeen, 5000);
-
-    const sub = supabase.channel("messages").on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
-        loadMsgs(true);
-      }).subscribe();
-
+    const sub = supabase.channel("messages").on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => { loadMsgs(true); }).subscribe();
     subRef.current = sub;
-
     return () => {
       clearInterval(pi);
       clearInterval(si);
@@ -236,12 +330,19 @@ export default function App() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
+  const handleReply = (msg: Message) => {
+    setReplyTo({ id: msg.id, sender: msg.sender, text: msg.text, imageData: msg.imageData });
+    inputRef.current?.focus();
+  };
+
   const send = async (extra: { imageData?: string } = {}) => {
     if (sending) return;
     const text = input.trim();
     if (!text && !extra.imageData) return;
     setSending(true);
     setInput("");
+    const currentReply = replyTo;
+    setReplyTo(null);
 
     const nm: Message = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -250,7 +351,8 @@ export default function App() {
       imageData: extra.imageData || null,
       gifUrl: null,
       reactions: {},
-      ts: Date.now()
+      ts: Date.now(),
+      replyTo: currentReply || null
     };
 
     try {
@@ -280,19 +382,15 @@ export default function App() {
     try {
       const msg = msgs.find(m => m.id === msgId);
       if (!msg) return;
-
       const reactions = {...msg.reactions };
       if (!reactions[emoji]) reactions[emoji] = [];
-
       if (reactions[emoji].includes(user!)) {
         reactions[emoji] = reactions[emoji].filter(u => u !== user);
         if (!reactions[emoji].length) delete reactions[emoji];
       } else {
         reactions[emoji] = [...reactions[emoji], user!];
       }
-
       const { error } = await supabase.from("messages").update({ reactions }).eq("id", msgId);
-
       if (error) throw error;
       await loadMsgs();
     } catch (e) {
@@ -356,10 +454,12 @@ export default function App() {
           {grouped.map(item => item.type === "day" ? (
             <div key={item.key} style={{ textAlign: "center", fontSize: 11, color: MUT, letterSpacing: "0.08em", textTransform: "uppercase", margin: "4px 0" }}>{item.label}</div>
           ) : (
-            <MsgItem key={item.msg!.id} msg={item.msg!} user={user} isSeenLast={item.msg!.id === lastSeenId} onReact={toggleReaction} onDelete={deleteMsg} />
+            <MsgItem key={item.msg!.id} msg={item.msg!} user={user} isSeenLast={item.msg!.id === lastSeenId} onReact={toggleReaction} onDelete={deleteMsg} onReply={handleReply} />
           ))}
           <div ref={bottomRef} />
         </div>
+
+        {replyTo && <ReplyPreview replyTo={replyTo} onCancel={() => setReplyTo(null)} user={user} />}
 
         <div style={{ background: "white", borderTop: `1px solid ${BR}`, padding: "10px 12px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
           <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} style={{ display: "none" }} />
