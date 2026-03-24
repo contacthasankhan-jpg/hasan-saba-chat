@@ -29,7 +29,6 @@ const fd = (ts: number) => {
   return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
 };
 
-// Returns true if the text is purely emoji characters (up to 6)
 const isEmojiOnly = (text: string): boolean => {
   const trimmed = text.trim();
   if (!trimmed) return false;
@@ -87,6 +86,55 @@ interface Message {
   replyTo?: ReplyTo | null;
 }
 
+// ── Lightbox ────────────────────────────────────────────────────────────────
+function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.88)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 20,
+        animation: "fadeIn 0.15s ease"
+      }}
+    >
+      <style>{`@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }`}</style>
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        style={{
+          position: "absolute", top: 16, right: 16,
+          width: 36, height: 36, borderRadius: "50%",
+          background: "rgba(255,255,255,0.15)", border: "none",
+          color: "white", fontSize: 20, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          lineHeight: 1
+        }}
+      >
+        ✕
+      </button>
+      {/* Image — stop propagation so clicking the image itself doesn't close */}
+      <img
+        src={src}
+        onClick={e => e.stopPropagation()}
+        style={{
+          maxWidth: "100%", maxHeight: "90vh",
+          borderRadius: 12, objectFit: "contain",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.6)"
+        }}
+      />
+    </div>
+  );
+}
+
 function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: BG, padding: "2rem" }}>
@@ -124,7 +172,7 @@ function ReplyPreview({ replyTo, onCancel, user }: { replyTo: ReplyTo; onCancel:
   );
 }
 
-function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onReply }: {
+function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onReply, onImageClick }: {
   msg: Message;
   user: string;
   isSeenLast: boolean;
@@ -132,6 +180,7 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
   onReact: (id: string, emoji: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onReply: (msg: Message) => void;
+  onImageClick: (src: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -146,8 +195,6 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
   const light = ul(msg.sender);
   const reactions = Object.entries(msg.reactions || {}).filter(([, u]) => u.length > 0);
   const emojiOnly = msg.text ? isEmojiOnly(msg.text) : false;
-
-  // Emoji count for sizing: 1 = 48px, 2-3 = 40px, 4-6 = 32px
   const emojiCount = emojiOnly && msg.text ? (msg.text.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu) || []).length : 0;
   const emojiFontSize = emojiCount === 1 ? 52 : emojiCount <= 3 ? 42 : 34;
 
@@ -162,11 +209,8 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
     const dx = e.touches[0].clientX - touchStartX.current;
     const dy = e.touches[0].clientY - touchStartY.current;
     if (Math.abs(dy) > Math.abs(dx)) { setSwiping(false); setSwipeX(0); return; }
-    if (mine && dx < 0) {
-      setSwipeX(Math.max(dx, -70));
-    } else if (!mine && dx > 0) {
-      setSwipeX(Math.min(dx, 70));
-    }
+    if (mine && dx < 0) { setSwipeX(Math.max(dx, -70)); }
+    else if (!mine && dx > 0) { setSwipeX(Math.min(dx, 70)); }
     if (Math.abs(dx) > 50 && !swipeTriggered.current) {
       swipeTriggered.current = true;
       onReply(msg);
@@ -174,10 +218,7 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
     }
   };
 
-  const handleTouchEnd = () => {
-    setSwipeX(0);
-    setSwiping(false);
-  };
+  const handleTouchEnd = () => { setSwipeX(0); setSwiping(false); };
 
   return (
     <div
@@ -188,7 +229,6 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Only show sender name on the first message in a consecutive run */}
       {!mine && isFirstInRun && (
         <div style={{ fontSize: 11, color, fontWeight: 500, marginBottom: 3, paddingLeft: 4 }}>{msg.sender}</div>
       )}
@@ -204,15 +244,11 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
         </div>
       )}
 
-      {/* Outer row: timestamp on far edge, bubble in middle */}
       <div style={{ display: "flex", flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end", gap: 6 }}>
-
-        {/* Timestamp on outer edge */}
         <span style={{ fontSize: 10, color: "#c0b0a8", flexShrink: 0, paddingBottom: 2, whiteSpace: "nowrap" }}>
           {ft(msg.ts)}
         </span>
 
-        {/* Bubble row with action buttons */}
         <div style={{ display: "flex", alignItems: "flex-end", gap: 5, flexDirection: mine ? "row-reverse" : "row", maxWidth: "min(68vw, 300px)", transform: `translateX(${swipeX}px)`, transition: swiping ? "none" : "transform 0.2s ease" }}>
           {hovered && mine && (
             <button onClick={() => onDelete(msg.id)}
@@ -231,11 +267,24 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
             </button>
           )}
           <div style={{ maxWidth: "100%", minWidth: 0 }}>
-            {msg.imageData && <img src={msg.imageData} alt="" style={{ maxWidth: "100%", borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0 }} />}
-            {msg.gifUrl && <img src={msg.gifUrl} alt="" style={{ maxWidth: 200, borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0 }} />}
+            {msg.imageData && (
+              <img
+                src={msg.imageData}
+                alt=""
+                onClick={() => onImageClick(msg.imageData!)}
+                style={{ maxWidth: "100%", borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0, cursor: "pointer" }}
+              />
+            )}
+            {msg.gifUrl && (
+              <img
+                src={msg.gifUrl}
+                alt=""
+                onClick={() => onImageClick(msg.gifUrl!)}
+                style={{ maxWidth: 200, borderRadius: 12, display: "block", marginBottom: msg.text ? 4 : 0, cursor: "pointer" }}
+              />
+            )}
             {msg.text && (
               emojiOnly ? (
-                // Big emoji — no bubble, just large text
                 <div style={{ fontSize: emojiFontSize, lineHeight: 1.15, padding: "2px 4px", userSelect: "none" }}>
                   {msg.text}
                 </div>
@@ -271,7 +320,6 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
         </div>
       )}
 
-      {/* Seen receipt — independent of timestamp */}
       {isSeenLast && mine && (
         <div style={{ fontSize: 10, color, fontWeight: 500, marginTop: 2, paddingRight: 4 }}>✓✓ Seen</div>
       )}
@@ -287,6 +335,7 @@ export default function App() {
   const [sending, setSending] = useState(false);
   const [seenOther, setSeenOther] = useState(0);
   const [replyTo, setReplyTo] = useState<ReplyTo | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -349,7 +398,6 @@ export default function App() {
     };
   }, [user]);
 
-  // Only autoscroll when keyboard is open
   useEffect(() => {
     if (!inputFocusedRef.current) return;
     const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -445,7 +493,6 @@ export default function App() {
     }
   };
 
-  // Build grouped list and compute isFirstInRun per message
   const grouped: Array<{ type: string; label?: string; key?: string; msg?: Message; isFirstInRun?: boolean }> = [];
   let lastDay: string | null = null;
   let lastSender: string | null = null;
@@ -454,7 +501,7 @@ export default function App() {
     if (day !== lastDay) {
       grouped.push({ type: "day", label: day, key: `d${msg.ts}` });
       lastDay = day;
-      lastSender = null; // reset run on new day
+      lastSender = null;
     }
     const isFirstInRun = msg.sender !== lastSender;
     grouped.push({ type: "msg", msg, isFirstInRun });
@@ -475,6 +522,10 @@ export default function App() {
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0;}textarea,input{font-family:'DM Sans',sans-serif;}textarea:focus,input:focus{outline:none;}`}</style>
+
+      {/* Lightbox — rendered outside the chat layout so it overlays everything */}
+      {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+
       <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: chatBg }}>
 
         <div style={{ background: "white", borderBottom: `1px solid ${BR}`, height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
@@ -506,6 +557,7 @@ export default function App() {
               onReact={toggleReaction}
               onDelete={deleteMsg}
               onReply={handleReply}
+              onImageClick={setLightboxSrc}
             />
           ))}
           <div ref={bottomRef} />
