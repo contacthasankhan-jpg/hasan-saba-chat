@@ -397,9 +397,16 @@ export default function App() {
     await send({ imageData });
   };
 
-  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
-  };
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  if (isMobile) return; // on mobile, Enter always makes new line
+  if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+    e.preventDefault();
+    send();
+  }
+  // Ctrl+Enter makes new line on PC (default behaviour, no need to handle)
+};
 
   const grouped: Array<{ type: string; label?: string; key?: string; msg?: Message }> = [];
   let lastDay: string | null = null;
@@ -461,7 +468,7 @@ export default function App() {
           <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
             placeholder={`Message ${other}…`} rows={1}
             style={{ flex: 1, border: `1.5px solid ${BR}`, borderRadius: 20, padding: "9px 14px", fontSize: 14, color: TXT, background: chatBg, resize: "none", minHeight: 38, maxHeight: 100, lineHeight: 1.4 }} />
-          <button onClick={() => send()} disabled={!input.trim() || sending}
+          <button onMouseDown={e => e.preventDefault()} onClick={() => send()} disabled={!input.trim() || sending}
             style={{ width: 38, height: 38, borderRadius: "50%", background: uc(user), border: "none", cursor: input.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: input.trim() ? 1 : 0.5, transition: "opacity 0.2s" }}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
           </button>
