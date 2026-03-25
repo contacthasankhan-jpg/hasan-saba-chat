@@ -138,7 +138,9 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
 function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: BG, padding: "2rem" }}>
-      <p style={{ fontSize: 16, color: MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>Tickle the tism'</p>
+   <p style={{ fontSize: 16, color: MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
+  Tickle the tism' <span style={{ fontSize: 40, lineHeight: 1, verticalAlign: "middle", color: "#d4a0a8" }}>♡</span>
+</p>
       <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 46, fontWeight: 400, color: TXT, marginBottom: 6, letterSpacing: -0.5 }}>Hasan & Saba</h1>
       <p style={{ fontSize: 16, color: MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 52 }}>The Seventh Infinity Stone</p>
       <p style={{ fontSize: 11, color: MUT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>Who are you?</p>
@@ -403,6 +405,13 @@ export default function App() {
     const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     return () => clearTimeout(t);
   }, [msgs]);
+
+  // Initial scroll to bottom on load
+useEffect(() => {
+  if (!loading && msgs.length > 0) {
+    bottomRef.current?.scrollIntoView({ behavior: "instant" });
+  }
+}, [loading]);
 
   const handleReply = (msg: Message) => {
     setReplyTo({ id: msg.id, sender: msg.sender, text: msg.text, imageData: msg.imageData });
