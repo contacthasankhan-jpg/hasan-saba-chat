@@ -625,19 +625,26 @@ useEffect(() => {
     await updateSeen();
   };
 
-  const sendHeart = async () => {
-    const recipient = user === "Hasan" ? "Saba" : "Hasan";
-    const heartMsg: Message = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      sender: user!, text: null, imageData: null, gifUrl: null,
-      reactions: {}, ts: Date.now(), type: "heart", starred: false, edited: false
-    };
-    try {
-      await supabase.from("messages").insert(heartMsg);
-      await supabase.from("heart_pending").upsert({ recipient, sender: user!, sent_at: Date.now(), seen: false }, { onConflict: "recipient" });
-      await loadMsgs();
-    } catch (e) { console.error("sendHeart error:", e); }
+const sendHeart = async () => {
+  const recipient = user === "Hasan" ? "Saba" : "Hasan";
+  const heartMsg: Message = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    sender: user!, text: null, imageData: null, gifUrl: null,
+    reactions: {}, ts: Date.now(), type: "heart", starred: false, edited: false
   };
+  try {
+    await supabase.from("messages").insert(heartMsg);
+    // Delete first, then insert fresh — guarantees seen is always false
+    await supabase.from("heart_pending").delete().eq("recipient", recipient);
+    await supabase.from("heart_pending").insert({
+      recipient,
+      sender: user!,
+      sent_at: Date.now(),
+      seen: false
+    });
+    await loadMsgs();
+  } catch (e) { console.error("sendHeart error:", e); }
+};
 
   const deleteMsg = async (id: string) => {
     try { await supabase.from("messages").delete().eq("id", id); await loadMsgs(); } catch (e) {}
