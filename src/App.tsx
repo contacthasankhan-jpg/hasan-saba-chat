@@ -569,11 +569,20 @@ export default function App() {
     };
   }, [user]);
 
-  useEffect(() => {
-    if (!inputFocusedRef.current) return;
-    const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  // Scroll to bottom when typing
+useEffect(() => {
+  if (!inputFocusedRef.current) return;
+  const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  return () => clearTimeout(t);
+}, [msgs]);
+
+// Initial scroll to bottom on load
+useEffect(() => {
+  if (!loading && msgs.length > 0) {
+    const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "instant" }), 150);
     return () => clearTimeout(t);
-  }, [msgs]);
+  }
+}, [loading]);
 
   const handleReply = (msg: Message) => {
     setReplyTo({ id: msg.id, sender: msg.sender, text: msg.text, imageData: msg.imageData });
@@ -690,16 +699,22 @@ export default function App() {
   };
 
   // Build grouped list
-  const grouped: Array<{ type: string; label?: string; key?: string; msg?: Message; isFirstInRun?: boolean }> = [];
-  let lastDay: string | null = null;
-  let lastSender: string | null = null;
-  for (const msg of msgs) {
-    const day = fd(msg.ts);
-    if (day !== lastDay) { grouped.push({ type: "day", label: day, key: `d${msg.ts}` }); lastDay = day; lastSender = null; }
-    const isFirstInRun = msg.sender !== lastSender || msg.type === "heart";
-    grouped.push({ type: "msg", msg, isFirstInRun });
-    lastSender = msg.type === "heart" ? null : msg.sender;
+const grouped: Array<{ type: string; label?: string; key?: string; msg?: Message; isFirstInRun?: boolean }> = [];
+let lastDay: string | null = null;
+let lastSender: string | null = null;
+let newDividerAdded = false;
+for (const msg of msgs) {
+  const day = fd(msg.ts);
+  if (day !== lastDay) { grouped.push({ type: "day", label: day, key: `d${msg.ts}` }); lastDay = day; lastSender = null; }
+  // Add "new messages" divider
+  if (!newDividerAdded && newMsgBanner && msg.id === newMsgBanner.firstId) {
+    grouped.push({ type: "newdivider", key: "newdivider" });
+    newDividerAdded = true;
   }
+  const isFirstInRun = msg.sender !== lastSender || msg.type === "heart";
+  grouped.push({ type: "msg", msg, isFirstInRun });
+  lastSender = msg.type === "heart" ? null : msg.sender;
+}
 
   const myMsgs = msgs.filter(m => m.sender === user);
   let lastSeenId: string | null = null;
@@ -762,9 +777,15 @@ export default function App() {
               <div style={{ fontSize: 13, color: MUT }}>Just for the two of you.</div>
             </div>
           )}
-          {grouped.map(item => item.type === "day" ? (
-            <div key={item.key} style={{ textAlign: "center", fontSize: 11, color: MUT, letterSpacing: "0.08em", textTransform: "uppercase", margin: "4px 0" }}>{item.label}</div>
-          ) : (
+         {grouped.map(item => item.type === "day" ? (
+  <div key={item.key} style={{ textAlign: "center", fontSize: 11, color: MUT, letterSpacing: "0.08em", textTransform: "uppercase", margin: "4px 0" }}>{item.label}</div>
+) : item.type === "newdivider" ? (
+  <div key="newdivider" style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0" }}>
+    <div style={{ flex: 1, height: 1, background: BR }} />
+    <span style={{ fontSize: 11, color: MUT, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>New messages</span>
+    <div style={{ flex: 1, height: 1, background: BR }} />
+  </div>
+) : (
             <MsgItem key={item.msg!.id} msg={item.msg!} user={user} isSeenLast={item.msg!.id === lastSeenId}
               isFirstInRun={item.isFirstInRun!} onReact={toggleReaction} onDelete={deleteMsg}
               onReply={handleReply} onImageClick={setLightboxSrc} onStar={toggleStar} onPin={pinMessage} />
