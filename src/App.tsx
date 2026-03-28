@@ -1033,21 +1033,23 @@ export default function App() {
     </>
   );
 
-  if (view === "login" || !user) return (
+    if (view === "login" || !user) return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0;font-family:'DM Sans',sans-serif}`}</style>
       <LoginScreen
-  onLogin={name => {
-    if (name === "Hasan") setHasanGlow(false);
-    else setSabaGlow(false);
-    setUser(name);
-    setView("chat");
-  }}
-  onJar={() => setView("jar")}
-  hasanGlow={hasanGlow}
-  sabaGlow={sabaGlow}
-  night={night}
-/>
+        onLogin={name => {
+          if (name === "Hasan") setHasanGlow(false);
+          else setSabaGlow(false);
+          setUser(name);
+          setView("chat");
+        }}
+        onJar={() => setView("jar")}
+        hasanGlow={hasanGlow}
+        sabaGlow={sabaGlow}
+        night={night}
+      />
+    </>   // ← ADD THIS
+  );      // ← AND THIS
 
   return (
     <>
