@@ -565,16 +565,21 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    swipeTriggered.current = false;
-    setSwiping(true);
-    holdTimer.current = setTimeout(() => {
-      const touch = e.touches[0];
-      setContextMenu({ x: touch.clientX, y: touch.clientY - 20 });
-      try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {}
-    }, 500);
-  };
+  touchStartX.current = e.touches[0].clientX;
+  touchStartY.current = e.touches[0].clientY;
+  swipeTriggered.current = false;
+  setSwiping(true);
+  holdTimer.current = setTimeout(() => {
+    // Fixed position based on mine/not mine — never uses touch X
+    // Always appears near top of screen, anchored to message side
+    const safeX = mine
+      ? window.innerWidth - 220  // own messages: anchor from right
+      : 12;                       // other's messages: anchor from left
+    const safeY = Math.min(touchStartY.current - 20, window.innerHeight - 320);
+    setContextMenu({ x: safeX, y: safeY });
+    try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {}
+  }, 500);
+};
   const handleTouchMove = (e: React.TouchEvent) => {
     const dx = e.touches[0].clientX - touchStartX.current;
     const dy = e.touches[0].clientY - touchStartY.current;
@@ -789,19 +794,17 @@ export default function App() {
   };
 
   const loadGlowState = async () => {
-    try {
-      const { data: hasanSeen } = await supabase.from("seen_status").select("last_seen").eq("username", "Hasan").maybeSingle();
-      const { data: sabaSeen } = await supabase.from("seen_status").select("last_seen").eq("username", "Saba").maybeSingle();
-      const hasanLastSeen = hasanSeen?.last_seen || 0;
-      const sabaLastSeen = sabaSeen?.last_seen || 0;
-      const { data: allMsgs } = await supabase.from("messages").select("sender,ts,type").order("ts", { ascending: false }).limit(50);
-      const ms = (allMsgs || []) as any[];
-      // Hasan glows if Saba sent something after Hasan last opened the app
-      setHasanGlow(hasanLastSeen > 0 && ms.some(m => m.sender === "Saba" && m.ts > hasanLastSeen));
-      // Saba glows if Hasan sent something after Saba last opened the app
-      setSabaGlow(sabaLastSeen > 0 && ms.some(m => m.sender === "Hasan" && m.ts > sabaLastSeen));
-    } catch (e) {}
-  };
+  try {
+    const { data: hasanSeen } = await supabase.from("seen_status").select("last_seen").eq("username", "Hasan").maybeSingle();
+    const { data: sabaSeen } = await supabase.from("seen_status").select("last_seen").eq("username", "Saba").maybeSingle();
+    const hasanLastSeen = hasanSeen?.last_seen || 0;
+    const sabaLastSeen = sabaSeen?.last_seen || 0;
+    const { data: allMsgs } = await supabase.from("messages").select("sender,ts,type").order("ts", { ascending: false }).limit(50);
+    const ms = (allMsgs || []) as any[];
+    setHasanGlow(ms.some(m => m.sender === "Saba" && m.ts > hasanLastSeen));
+    setSabaGlow(ms.some(m => m.sender === "Hasan" && m.ts > sabaLastSeen));
+  } catch (e) {}
+};
 
   const updateSeen = async () => {
     const u = userRef.current;
@@ -1033,9 +1036,18 @@ export default function App() {
   if (view === "login" || !user) return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0;font-family:'DM Sans',sans-serif}`}</style>
-      <LoginScreen onLogin={name => { setUser(name); setView("chat"); }} onJar={() => setView("jar")} hasanGlow={hasanGlow} sabaGlow={sabaGlow} night={night} />
-    </>
-  );
+      <LoginScreen
+  onLogin={name => {
+    if (name === "Hasan") setHasanGlow(false);
+    else setSabaGlow(false);
+    setUser(name);
+    setView("chat");
+  }}
+  onJar={() => setView("jar")}
+  hasanGlow={hasanGlow}
+  sabaGlow={sabaGlow}
+  night={night}
+/>
 
   return (
     <>
