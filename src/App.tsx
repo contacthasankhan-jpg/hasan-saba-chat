@@ -17,9 +17,8 @@ const TXT = "#3d2c26";
 const MUT = "#9e8880";
 const BR = "#f0ddd8";
 
-// Night mode deeper bubble colours for other person
-const NIGHT_OTHER_HASAN = "#7a1f1f"; // deeper red (Saba sees this for Hasan's messages)
-const NIGHT_OTHER_SABA = "#0f5c3a";  // deeper green (Hasan sees this for Saba's messages)
+const NIGHT_OTHER_HASAN = "#7a1f1f";
+const NIGHT_OTHER_SABA = "#0f5c3a";
 
 const QUICK_EMOJIS = ["❤️", "😂", "😢", "😮", "🔥"];
 const SUPER_HEART_THRESHOLD = 5;
@@ -64,7 +63,6 @@ const isEmojiOnly = (text: string): boolean => {
 };
 const isNightMode = () => { const h = new Date().getHours(); return h >= 21 || h < 5; };
 
-// Fixed star positions to avoid re-renders
 const STARS = Array.from({ length: 60 }, (_, i) => ({
   left: `${(i * 37.3 + 11) % 100}%`,
   top: `${(i * 53.7 + 7) % 100}%`,
@@ -113,7 +111,7 @@ interface Message {
 interface PinnedData { message_id: string; pinned_by: string; pinned_at: number; }
 
 const FLOAT_HEARTS = [
-  { left: "8%", delay: "0s", size: 22, dur: "3.2s" },
+  { left: "8%",  delay: "0s",   size: 22, dur: "3.2s" },
   { left: "18%", delay: "0.6s", size: 16, dur: "2.8s" },
   { left: "30%", delay: "1.1s", size: 28, dur: "3.5s" },
   { left: "44%", delay: "0.3s", size: 18, dur: "2.6s" },
@@ -127,18 +125,12 @@ const FLOAT_HEARTS = [
 function NightStars() {
   return (
     <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
-      <style>{`
-        @keyframes starTwinkle { 0%,100%{opacity:var(--op);transform:scale(1)} 50%{opacity:calc(var(--op)*0.3);transform:scale(0.6)} }
-      `}</style>
+      <style>{`@keyframes starTwinkle{0%,100%{opacity:var(--op);transform:scale(1)}50%{opacity:calc(var(--op)*0.3);transform:scale(0.6)}}`}</style>
       {STARS.map((s, i) => (
         <div key={i} style={{
-          position: "absolute",
-          left: s.left, top: s.top,
-          width: s.size, height: s.size,
-          borderRadius: "50%",
-          background: "white",
-          ["--op" as any]: s.opacity,
-          opacity: s.opacity,
+          position: "absolute", left: s.left, top: s.top,
+          width: s.size, height: s.size, borderRadius: "50%", background: "white",
+          ["--op" as any]: s.opacity, opacity: s.opacity,
           animation: `starTwinkle ${s.dur} ${s.delay} ease-in-out infinite`,
           boxShadow: s.size >= 3 ? `0 0 ${s.size * 2}px rgba(255,255,255,0.8)` : "none",
         }} />
@@ -191,9 +183,9 @@ function HeartBanner({ sender, isSuper, onDismiss }: { sender: string; isSuper?:
 function BackgroundHeart({ count, isSuper, night }: { count: number; isSuper: boolean; night: boolean }) {
   const fillPct = Math.min(count / SUPER_HEART_THRESHOLD, 1);
   const strokeColor = night ? (isSuper ? "#ffd700" : "#ff2244") : (isSuper ? "#ffd700" : "#d4a0a8");
-  const fillColor = night ? (isSuper ? "#ffd700" : "#ff2244") : (isSuper ? "#ffd700" : "#d4a0a8");
+  const fillColor   = night ? (isSuper ? "#ffd700" : "#ff2244") : (isSuper ? "#ffd700" : "#d4a0a8");
   const strokeOpacity = night ? (isSuper ? 0.85 : 0.7) : (isSuper ? 0.7 : 0.5);
-  const fillOpacity = night ? (isSuper ? 0.7 : 0.55) : (isSuper ? 0.6 : 0.45);
+  const fillOpacity   = night ? (isSuper ? 0.7  : 0.55) : (isSuper ? 0.6 : 0.45);
 
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
@@ -303,10 +295,10 @@ function ContextMenu({ x, y, mine, msg, user, onEdit, onDelete, onMemoryJar, onP
 
   const menuW = 180;
   const left = Math.min(x, window.innerWidth - menuW - 8);
-  const top = Math.min(y, window.innerHeight - 320);
+  const top  = Math.min(y, window.innerHeight - 320);
 
   const menuItems = [
-    { label: "✦ Memory Jar", action: onMemoryJar, color: TXT, both: true },...(mine && onEdit ? [{ label: "✏️ Edit", action: onEdit!, color: TXT, both: false }] : []),...(mine ? [{ label: "📌 Pin", action: onPin, color: TXT, both: false }] : []),...(mine ? [{ label: "🗑️ Delete", action: onDelete, color: "#dc3535", both: false }] : []),
+    { label: "✦ Memory Jar", action: onMemoryJar, color: TXT, both: true },...(mine && onEdit ? [{ label: "✏️ Edit",   action: onEdit!,  color: TXT,       both: false }] : []),...(mine           ? [{ label: "📌 Pin",    action: onPin,    color: TXT,       both: false }] : []),...(mine           ? [{ label: "🗑️ Delete", action: onDelete, color: "#dc3535", both: false }] : []),
   ].filter(item => item.both || mine);
 
   return (
@@ -446,180 +438,7 @@ function MemoryJar({ onBack, night }: { onBack: () => void; night: boolean }) {
     </div>
   );
 }
-// ── FlipNumber ────────────────────────────────────────────────────────────────
-function FlipNumber({ value, color }: { value: number; color: string }) {
-  const [displayed, setDisplayed] = useState(value);
-  const [flipping, setFlipping] = useState(false);
 
-  useEffect(() => {
-    if (value === displayed) return;
-    setFlipping(true);
-    const t = setTimeout(() => {
-      setDisplayed(value);
-      setFlipping(false);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [value]);
-
-  return (
-    <>
-      <style>{`
-        @keyframes flipOut {
-          0%   { transform: rotateX(0deg);    opacity: 1; }
-          100% { transform: rotateX(-90deg);  opacity: 0; }
-        }
-        @keyframes flipIn {
-          0%   { transform: rotateX(90deg);   opacity: 0; }
-          100% { transform: rotateX(0deg);    opacity: 1; }
-        }
-      `}</style>
-      <div style={{
-        perspective:     400,
-        display:         "inline-block",
-      }}>
-        <div style={{
-          fontFamily:      "'Cormorant Garamond', serif",
-          fontSize:        28,
-          fontWeight:      500,
-          color:           color,
-          lineHeight:      1,
-          display:         "inline-block",
-          transformOrigin: "center center",
-          animation:       flipping
-            ? "flipOut 0.3s ease forwards"
-            : "flipIn 0.3s ease forwards",
-        }}>
-          {displayed}
-        </div>
-      </div>
-    </>
-  );
-}
-// ── TimeSince ─────────────────────────────────────────────────────────────────
-function TimeSince({ night }: { night: boolean }) {
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 60000); // update every minute
-    return () => clearInterval(t);
-  }, []);
-
-  const MET_DATE        = new Date("2026-01-27T00:00:00").getTime();
-  const ANNIVERSARY_DATE = new Date("2026-03-18T00:00:00").getTime();
-
-  const daysSince = (from: number) =>
-    Math.floor((now - from) / (1000 * 60 * 60 * 24));
-
-  const metDays  = daysSince(MET_DATE);
-  const annivDays = daysSince(ANNIVERSARY_DATE);
-
-  const mutColor  = night ? "rgba(212,160,168,0.5)"  : MUT;
-  const txtColor  = night ? "#f0d8e0"                : TXT;
-  const cardBg    = night ? "rgba(61,16,32,0.45)"    : "rgba(255,255,255,0.55)";
-  const borderCol = night ? "rgba(90,24,48,0.6)"     : "rgba(240,221,216,0.8)";
-  const numColor  = night ? "#f0d8e0"                : TXT;
-  const accentH   = night ? "rgba(255,100,130,0.7)"  : H;
-  const accentS   = night ? "rgba(5,150,105,0.8)"    : S;
-
-  const items = [
-    {
-      emoji:   "✦",
-      label:   "Time together",
-      days:    metDays,
-      accent:  accentH,
-      date:    "since Jan 27",
-    },
-    {
-      emoji:   "♡",
-      label:   "Anniversary",
-      days:    annivDays,
-      accent:  accentS,
-      date:    "since Mar 18",
-    },
-  ];
-
-  return (
-    <div style={{
-      display:        "flex",
-      gap:            10,
-      marginTop:      20,
-      width:          "100%",
-      maxWidth:       320,
-    }}>
-      <style>{`
-        @keyframes tsSlideUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0);    }
-        }
-      `}</style>
-
-      {items.map((item, i) => (
-        <div key={i} style={{
-          flex:           1,
-          background:     cardBg,
-          border:         `1px solid ${borderCol}`,
-          borderRadius:   16,
-          padding:        "10px 12px",
-          display:        "flex",
-          flexDirection:  "column",
-          alignItems:     "center",
-          gap:            2,
-          backdropFilter: "blur(8px)",
-          animation:      `tsSlideUp 0.5s ${i * 0.1}s ease both`,
-          boxShadow:      night
-            ? "0 2px 12px rgba(0,0,0,0.25)"
-            : "0 1px 8px rgba(0,0,0,0.04)",
-        }}>
-          {/* emoji accent */}
-          <div style={{
-            fontSize:      13,
-            color:         item.accent,
-            lineHeight:    1,
-            marginBottom:  2,
-          }}>
-            {item.emoji}
-          </div>
-
-                   {/* day count */}
-          <FlipNumber value={item.days} color={numColor} />
-
-          {/* "days" label */}
-          <div style={{
-            fontSize:       9,
-            color:          mutColor,
-            letterSpacing:  "0.12em",
-            textTransform:  "uppercase",
-          }}>
-            days
-          </div>
-
-          {/* title */}
-          <div style={{
-            fontSize:       11,
-            color:          txtColor,
-            fontFamily:     "'Cormorant Garamond', serif",
-            fontStyle:      "italic",
-            marginTop:      4,
-            textAlign:      "center",
-            lineHeight:     1.3,
-          }}>
-            {item.label}
-          </div>
-
-          {/* subtle date */}
-          <div style={{
-            fontSize:       9,
-            color:          mutColor,
-            letterSpacing:  "0.06em",
-            marginTop:      1,
-          }}>
-            {item.date}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 // ── CountdownWidget ───────────────────────────────────────────────────────────
 function CountdownWidget({ night }: { night: boolean }) {
   const [label, setLabel] = useState("");
@@ -629,67 +448,50 @@ function CountdownWidget({ night }: { night: boolean }) {
   const [draftDate, setDraftDate] = useState("");
   const [now, setNow] = useState(Date.now());
 
-  // Tick every second
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Load from Supabase on mount
   useEffect(() => {
     supabase.from("countdown").select("*").eq("id", "shared").maybeSingle().then(({ data }) => {
-        if (data) {
-          setLabel(data.label || "");
-          setTargetDate(data.target_date || "");
-        }
+        if (data) { setLabel(data.label || ""); setTargetDate(data.target_date || ""); }
       });
   }, []);
 
-  const openEditor = () => {
-    setDraftLabel(label);
-    setDraftDate(targetDate);
-    setShowEditor(true);
-  };
+  const openEditor = () => { setDraftLabel(label); setDraftDate(targetDate); setShowEditor(true); };
 
-  // Save to Supabase instead of localStorage
   const saveEditor = async () => {
     if (!draftDate) return;
     const newLabel = draftLabel.trim() || "Countdown";
-    const newDate = draftDate;
-    setLabel(newLabel);
-    setTargetDate(newDate);
+    setLabel(newLabel); setTargetDate(draftDate);
     await supabase.from("countdown").upsert(
-      { id: "shared", label: newLabel, target_date: newDate, updated_at: Date.now() },
+      { id: "shared", label: newLabel, target_date: draftDate, updated_at: Date.now() },
       { onConflict: "id" }
     );
     setShowEditor(false);
   };
 
-  // Clear from Supabase
   const clearCountdown = async () => {
-    setLabel("");
-    setTargetDate("");
+    setLabel(""); setTargetDate("");
     await supabase.from("countdown").delete().eq("id", "shared");
     setShowEditor(false);
   };
 
-  //... rest of the component (diff/past calculations + JSX) stays exactly the same
-
-  // Calculate time parts
-  const diff = targetDate ? new Date(targetDate).getTime() + 86400000 - now : 0;
-  const past = diff <= 0;
+  const diff     = targetDate ? new Date(targetDate).getTime() + 86400000 - now : 0;
+  const past     = diff <= 0;
   const totalSec = past ? 0 : Math.floor(diff / 1000);
-  const days = Math.floor(totalSec / 86400);
-  const hours = Math.floor((totalSec % 86400) / 3600);
-  const mins = Math.floor((totalSec % 3600) / 60);
-  const secs = totalSec % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
+  const days     = Math.floor(totalSec / 86400);
+  const hours    = Math.floor((totalSec % 86400) / 3600);
+  const mins     = Math.floor((totalSec % 3600) / 60);
+  const secs     = totalSec % 60;
+  const pad      = (n: number) => String(n).padStart(2, "0");
 
-  const mutColor = night ? "rgba(212,160,168,0.45)" : MUT;
-  const txtColor = night ? "#f0d8e0" : TXT;
+  const mutColor   = night ? "rgba(212,160,168,0.45)" : MUT;
+  const txtColor   = night ? "#f0d8e0" : TXT;
   const borderColor = night ? "#5a1830" : BR;
-  const bgCard = night ? "rgba(61,16,32,0.6)" : "rgba(255,255,255,0.7)";
-  const unitColor = night ? "rgba(212,160,168,0.55)" : MUT;
+  const bgCard     = night ? "rgba(61,16,32,0.6)" : "rgba(255,255,255,0.7)";
+  const unitColor  = night ? "rgba(212,160,168,0.55)" : MUT;
 
   return (
     <>
@@ -699,92 +501,43 @@ function CountdownWidget({ night }: { night: boolean }) {
         @keyframes cdModalIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}
       `}</style>
 
-      {/* Editor Modal */}
       {showEditor && (
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 5000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 24px" }}
-          onClick={() => setShowEditor(false)}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background: night ? "#2a0f1a" : "white", borderRadius: "20px 20px 16px 16px", width: "100%", maxWidth: 420, padding: "24px 20px", boxShadow: "0 -4px 32px rgba(0,0,0,0.2)", border: `1px solid ${borderColor}`, animation: "cdModalIn 0.2s ease" }}
-          >
-            {/* Title */}
-            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, color: txtColor, marginBottom: 20, textAlign: "center" }}>
-              Set Countdown ✦
-            </div>
-
-            {/* Label input */}
+        <div style={{ position: "fixed", inset: 0, zIndex: 5000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 24px" }}
+          onClick={() => setShowEditor(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: night ? "#2a0f1a" : "white", borderRadius: "20px 20px 16px 16px", width: "100%", maxWidth: 420, padding: "24px 20px", boxShadow: "0 -4px 32px rgba(0,0,0,0.2)", border: `1px solid ${borderColor}`, animation: "cdModalIn 0.2s ease" }}>
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, color: txtColor, marginBottom: 20, textAlign: "center" }}>Set Countdown ✦</div>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 11, color: mutColor, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
-                What are you counting down to?
-              </label>
-              <input
-                value={draftLabel}
-                onChange={e => setDraftLabel(e.target.value)}
-                placeholder="e.g. Our Anniversary ♡"
-                autoFocus
-                style={{ width: "100%", border: `1.5px solid ${borderColor}`, borderRadius: 12, padding: "10px 14px", fontSize: 14, color: txtColor, background: night ? "rgba(255,255,255,0.07)" : "#fdf8f5", fontFamily: "'DM Sans', sans-serif", outline: "none" }}
-              />
+              <label style={{ fontSize: 11, color: mutColor, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>What are you counting down to?</label>
+              <input value={draftLabel} onChange={e => setDraftLabel(e.target.value)} placeholder="e.g. Our Anniversary ♡" autoFocus
+                style={{ width: "100%", border: `1.5px solid ${borderColor}`, borderRadius: 12, padding: "10px 14px", fontSize: 14, color: txtColor, background: night ? "rgba(255,255,255,0.07)" : "#fdf8f5", fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
             </div>
-
-            {/* Date input */}
             <div style={{ marginBottom: 24 }}>
-              <label style={{ fontSize: 11, color: mutColor, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
-                Target date
-              </label>
-              <input
-                type="date"
-                value={draftDate}
-                onChange={e => setDraftDate(e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
-                style={{ width: "100%", border: `1.5px solid ${borderColor}`, borderRadius: 12, padding: "10px 14px", fontSize: 14, color: txtColor, background: night ? "rgba(255,255,255,0.07)" : "#fdf8f5", fontFamily: "'DM Sans', sans-serif", outline: "none" }}
-              />
+              <label style={{ fontSize: 11, color: mutColor, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Target date</label>
+              <input type="date" value={draftDate} onChange={e => setDraftDate(e.target.value)} min={new Date().toISOString().split("T")[0]}
+                style={{ width: "100%", border: `1.5px solid ${borderColor}`, borderRadius: 12, padding: "10px 14px", fontSize: 14, color: txtColor, background: night ? "rgba(255,255,255,0.07)" : "#fdf8f5", fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
             </div>
-
-            {/* Buttons */}
             <div style={{ display: "flex", gap: 10 }}>
               {label && (
-                <button
-                  onClick={clearCountdown}
-                  style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1.5px solid ${borderColor}`, background: "none", fontSize: 13, color: "#dc3535", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
-                >
-                  Clear
-                </button>
+                <button onClick={clearCountdown} style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1.5px solid ${borderColor}`, background: "none", fontSize: 13, color: "#dc3535", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Clear</button>
               )}
-              <button
-                onClick={() => setShowEditor(false)}
-                style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1.5px solid ${borderColor}`, background: "none", fontSize: 13, color: mutColor, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveEditor}
-                disabled={!draftDate}
-                style={{ flex: 2, padding: "11px", borderRadius: 12, border: "none", background: draftDate ? H : borderColor, fontSize: 13, color: "white", cursor: draftDate ? "pointer" : "default", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, opacity: draftDate ? 1 : 0.5 }}
-              >
-                Save ✦
-              </button>
+              <button onClick={() => setShowEditor(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1.5px solid ${borderColor}`, background: "none", fontSize: 13, color: mutColor, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+              <button onClick={saveEditor} disabled={!draftDate}
+                style={{ flex: 2, padding: "11px", borderRadius: 12, border: "none", background: draftDate ? H : borderColor, fontSize: 13, color: "white", cursor: draftDate ? "pointer" : "default", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, opacity: draftDate ? 1 : 0.5 }}>Save ✦</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Countdown display */}
-      <div
-        onClick={openEditor}
-        style={{ marginTop: 32, cursor: "pointer", animation: "cdSlideUp 0.5s ease", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 24px", borderRadius: 20, background: bgCard, border: `1px solid ${borderColor}`, backdropFilter: "blur(8px)", maxWidth: 320, width: "100%", boxShadow: night ? "0 4px 20px rgba(0,0,0,0.3)" : "0 2px 16px rgba(0,0,0,0.06)", transition: "transform 0.15s, box-shadow 0.15s" }}
+      <div onClick={openEditor}
+        style={{ marginTop: 16, cursor: "pointer", animation: "cdSlideUp 0.5s ease", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 24px", borderRadius: 20, background: bgCard, border: `1px solid ${borderColor}`, backdropFilter: "blur(8px)", maxWidth: 320, width: "100%", boxShadow: night ? "0 4px 20px rgba(0,0,0,0.3)" : "0 2px 16px rgba(0,0,0,0.06)", transition: "transform 0.15s, box-shadow 0.15s" }}
         onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.02)"; (e.currentTarget as HTMLDivElement).style.boxShadow = night ? "0 6px 28px rgba(0,0,0,0.4)" : "0 4px 24px rgba(0,0,0,0.1)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1)"; (e.currentTarget as HTMLDivElement).style.boxShadow = night ? "0 4px 20px rgba(0,0,0,0.3)" : "0 2px 16px rgba(0,0,0,0.06)"; }}
-      >
-        {/* Label */}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1)"; (e.currentTarget as HTMLDivElement).style.boxShadow = night ? "0 4px 20px rgba(0,0,0,0.3)" : "0 2px 16px rgba(0,0,0,0.06)"; }}>
         <div style={{ fontSize: 12, color: mutColor, letterSpacing: "0.1em", textTransform: "uppercase", textAlign: "center" }}>
           {label || "tap to set a countdown ✦"}
         </div>
-
         {targetDate && !past && (
           <>
-            {/* Numbers row */}
             <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
               {[{ val: days, unit: "days" }, { val: hours, unit: "hrs" }, { val: mins, unit: "min" }, { val: secs, unit: "sec" }].map(({ val, unit }, i) => (
                 <div key={unit} style={{ display: "flex", alignItems: "flex-end", gap: i < 3 ? 6 : 0 }}>
@@ -798,24 +551,16 @@ function CountdownWidget({ night }: { night: boolean }) {
                 </div>
               ))}
             </div>
-
-            {/* Target date label */}
             <div style={{ fontSize: 11, color: mutColor, letterSpacing: "0.06em" }}>
               {new Date(targetDate).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
             </div>
           </>
         )}
-
         {targetDate && past && (
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: S, fontStyle: "italic" }}>
-            The day has come ♡
-          </div>
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: S, fontStyle: "italic" }}>The day has come ♡</div>
         )}
-
         {!targetDate && (
-          <div style={{ fontSize: 11, color: mutColor, fontStyle: "italic" }}>
-            — — : — — : — — : — —
-          </div>
+          <div style={{ fontSize: 11, color: mutColor, fontStyle: "italic" }}>— — : — — : — — : — —</div>
         )}
       </div>
     </>
@@ -828,8 +573,14 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
   hasanGlow: boolean; sabaGlow: boolean; night: boolean;
 }) {
   const nightBg = "linear-gradient(160deg, #2a0f1a 0%, #1e0d16 50%, #2d1020 100%)";
+
+  const timeSinceItems = [
+    { emoji: "✦", label: "Together",    days: Math.floor((Date.now() - new Date("2026-01-27T00:00:00").getTime()) / 86400000), date: "Jan 27" },
+    { emoji: "♡", label: "Anniversary", days: Math.floor((Date.now() - new Date("2026-03-18T00:00:00").getTime()) / 86400000), date: "Mar 18" },
+  ];
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: night ? nightBg : BG, padding: "2rem", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", background: night ? nightBg : BG, padding: "3rem 2rem 2rem", position: "relative", overflowY: "auto" }}>
       <style>{`
         @keyframes glowPulse{0%,100%{box-shadow:0 0 12px 4px currentColor,0 0 24px 8px currentColor}50%{box-shadow:0 0 20px 8px currentColor,0 0 40px 16px currentColor}}
         @keyframes nightFade{from{opacity:0}to{opacity:1}}
@@ -838,25 +589,16 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
 
       {night && <NightStars />}
 
-            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
 
-        {/* ── Time Since strip at the very top ── */}
-        <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320, marginBottom: 24 }}>
-          {[
-            { emoji: "✦", label: "Together", days: Math.floor((Date.now() - new Date("2026-01-27T00:00:00").getTime()) / 86400000), date: "Jan 27" },
-            { emoji: "♡", label: "Anniversary", days: Math.floor((Date.now() - new Date("2026-03-18T00:00:00").getTime()) / 86400000), date: "Mar 18" },
-          ].map((item, i) => (
+        {/* ── Time Since strip ── */}
+        <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320, marginBottom: 28 }}>
+          {timeSinceItems.map((item, i) => (
             <div key={i} style={{
-              flex: 1,
-              background: night ? "rgba(61,16,32,0.45)" : "rgba(255,255,255,0.55)",
+              flex: 1, background: night ? "rgba(61,16,32,0.45)" : "rgba(255,255,255,0.55)",
               border: `1px solid ${night ? "rgba(90,24,48,0.6)" : "rgba(240,221,216,0.8)"}`,
-              borderRadius: 12,
-              padding: "7px 10px",
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              backdropFilter: "blur(8px)",
-              boxShadow: night ? "0 2px 12px rgba(0,0,0,0.25)" : "0 1px 8px rgba(0,0,0,0.04)",
+              borderRadius: 12, padding: "7px 10px", display: "flex", alignItems: "center", gap: 7,
+              backdropFilter: "blur(8px)", boxShadow: night ? "0 2px 12px rgba(0,0,0,0.25)" : "0 1px 8px rgba(0,0,0,0.04)",
             }}>
               <div style={{ fontSize: 11, color: night ? "rgba(255,100,130,0.7)" : H }}>{item.emoji}</div>
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -870,7 +612,7 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
           ))}
         </div>
 
-        {/* ── Central title block ── */}
+        {/* ── Title block ── */}
         {night && (
           <div style={{ fontSize: 11, color: "rgba(212,160,168,0.55)", letterSpacing: "0.18em", textTransform: "uppercase", animation: "nightFade 1.5s ease", marginBottom: 14 }}>
             🌙   night mode   🌙
@@ -883,14 +625,14 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
         <p style={{ fontSize: 16, color: night ? "rgba(212,160,168,0.55)" : MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 52 }}>The Seventh Infinity Stone</p>
         <p style={{ fontSize: 11, color: night ? "rgba(212,160,168,0.4)" : MUT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>Who are you?</p>
 
+        {/* ── Login buttons ── */}
         <div style={{ display: "flex", gap: 14, marginBottom: 36 }}>
           {(["Hasan", "Saba"] as const).map(n => {
             const glow = n === "Hasan" ? hasanGlow : sabaGlow;
             return (
               <button key={n} onClick={() => onLogin(n)}
                 style={{
-                  padding: "13px 40px", borderRadius: 50,
-                  border: `2px solid ${uc(n)}`,
+                  padding: "13px 40px", borderRadius: 50, border: `2px solid ${uc(n)}`,
                   background: night ? "rgba(255,255,255,0.06)" : "white",
                   fontSize: 15, fontWeight: 500, color: uc(n), cursor: "pointer",
                   fontFamily: "'DM Sans', sans-serif", transition: "background 0.15s",
@@ -905,6 +647,7 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
           })}
         </div>
 
+        {/* ── Memory Jar ── */}
         <button onClick={onJar}
           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Sans', sans-serif", padding: "6px 12px", borderRadius: 20 }}
           onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = night ? "#f0d8e0" : TXT}
@@ -912,18 +655,9 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
           ✦ Memory Jar
         </button>
 
+        {/* ── Countdown ── */}
         <CountdownWidget night={night} />
-      </div>
 
-                <button onClick={onJar}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Sans', sans-serif", padding: "6px 12px", borderRadius: 20 }}
-          onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = night ? "#f0d8e0" : TXT}
-          onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = night ? "rgba(212,160,168,0.5)" : MUT}>
-          ✦ Memory Jar
-        </button>
-
-         <TimeSince night={night} />
-        <CountdownWidget night={night} />
       </div>
     </div>
   );
@@ -967,11 +701,11 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
   const holdTimer = useRef<any>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
 
-  const mine = msg.sender === user;
-  const color = uc(msg.sender);
-  const light = ul(msg.sender);
+  const mine      = msg.sender === user;
+  const color     = uc(msg.sender);
+  const light     = ul(msg.sender);
   const reactions = Object.entries(msg.reactions || {}).filter(([, u]) => u.length > 0);
-  const emojiOnly = msg.text && msg.type !== "heart" && msg.type !== "superheart" ? isEmojiOnly(msg.text) : false;
+  const emojiOnly  = msg.text && msg.type !== "heart" && msg.type !== "superheart" ? isEmojiOnly(msg.text) : false;
   const emojiCount = emojiOnly && msg.text ? (msg.text.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu) || []).length : 0;
   const emojiFontSize = emojiCount === 1 ? 52 : emojiCount <= 3 ? 42 : 34;
 
@@ -985,21 +719,18 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-  touchStartX.current = e.touches[0].clientX;
-  touchStartY.current = e.touches[0].clientY;
-  swipeTriggered.current = false;
-  setSwiping(true);
-  holdTimer.current = setTimeout(() => {
-    // Fixed position based on mine/not mine — never uses touch X
-    // Always appears near top of screen, anchored to message side
-    const safeX = mine
-      ? window.innerWidth - 220  // own messages: anchor from right
-      : 12;                       // other's messages: anchor from left
-    const safeY = Math.min(touchStartY.current - 20, window.innerHeight - 320);
-    setContextMenu({ x: safeX, y: safeY });
-    try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {}
-  }, 500);
-};
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    swipeTriggered.current = false;
+    setSwiping(true);
+    holdTimer.current = setTimeout(() => {
+      const safeX = mine ? window.innerWidth - 220 : 12;
+      const safeY = Math.min(touchStartY.current - 20, window.innerHeight - 320);
+      setContextMenu({ x: safeX, y: safeY });
+      try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {}
+    }, 500);
+  };
+
   const handleTouchMove = (e: React.TouchEvent) => {
     const dx = e.touches[0].clientX - touchStartX.current;
     const dy = e.touches[0].clientY - touchStartY.current;
@@ -1014,12 +745,12 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
       try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
     }
   };
+
   const handleTouchEnd = () => { clearTimeout(holdTimer.current); setSwipeX(0); setSwiping(false); };
   const handleContextMenu = (e: React.MouseEvent) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY }); };
 
-  // Bubble colours
   const nightOtherBg = otherUser === "Hasan" ? NIGHT_OTHER_HASAN : NIGHT_OTHER_SABA;
-  const bubbleBg = mine ? color : (night ? nightOtherBg : light);
+  const bubbleBg  = mine ? color : (night ? nightOtherBg : light);
   const bubbleTxt = mine ? "white" : (night ? "white" : TXT);
 
   if (msg.type === "heart" || msg.type === "superheart") {
@@ -1053,8 +784,7 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
       <div id={`msg-${msg.id}`}
         style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginBottom: 2, width: "100%", boxSizing: "border-box", padding: "0 8px" }}
         onContextMenu={handleContextMenu}
-        onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
-      >
+        onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         {!mine && isFirstInRun && (
           <div style={{ fontSize: 11, color, fontWeight: 500, marginBottom: 3, paddingLeft: 4 }}>{msg.sender}</div>
         )}
@@ -1133,14 +863,14 @@ export default function App() {
   const [sabaGlow, setSabaGlow] = useState(false);
   const [night, setNight] = useState(isNightMode());
 
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const countRef = useRef(0);
-  const userRef = useRef<string | null>(null);
-  const subRef = useRef<any>(null);
-  const inputFocusedRef = useRef(false);
-  const typingTimerRef = useRef<any>(null);
+  const bottomRef   = useRef<HTMLDivElement>(null);
+  const inputRef    = useRef<HTMLTextAreaElement>(null);
+  const fileRef     = useRef<HTMLInputElement>(null);
+  const countRef    = useRef(0);
+  const userRef     = useRef<string | null>(null);
+  const subRef      = useRef<any>(null);
+  const inputFocusedRef     = useRef(false);
+  const typingTimerRef      = useRef<any>(null);
   const newBannerCheckedRef = useRef(false);
 
   useEffect(() => { userRef.current = user; }, [user]);
@@ -1151,16 +881,14 @@ export default function App() {
 
   const other = user === "Hasan" ? "Saba" : "Hasan";
 
-  // Night colours
-  const nightChatBg = "linear-gradient(160deg, #2a0f1a 0%, #1e0d16 50%, #2d1020 100%)";
-  const nightHeaderBg = "#3d1020";
+  const nightChatBg    = "linear-gradient(160deg, #2a0f1a 0%, #1e0d16 50%, #2d1020 100%)";
+  const nightHeaderBg  = "#3d1020";
   const nightHeaderBorder = "#5a1830";
-  const dayChatBg = user === "Saba" ? BG_SABA : user === "Hasan" ? BG_HASAN : BG;
-  const chatBg = night ? nightChatBg : dayChatBg;
-  const headerBg = night ? nightHeaderBg : "white";
-  const headerBorder = night ? nightHeaderBorder : BR;
-  const headerTxt = night ? "white" : TXT;
-  const headerMut = night ? "rgba(255,255,255,0.55)" : MUT;
+  const dayChatBg  = user === "Saba" ? BG_SABA : user === "Hasan" ? BG_HASAN : BG;
+  const chatBg     = night ? nightChatBg : dayChatBg;
+  const headerBg   = night ? nightHeaderBg : "white";
+  const headerBorder  = night ? nightHeaderBorder : BR;
+  const headerMut  = night ? "rgba(255,255,255,0.55)" : MUT;
 
   const scrollToMsg = useCallback((id: string) => {
     document.getElementById(`msg-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1214,17 +942,17 @@ export default function App() {
   };
 
   const loadGlowState = async () => {
-  try {
-    const { data: hasanSeen } = await supabase.from("seen_status").select("last_seen").eq("username", "Hasan").maybeSingle();
-    const { data: sabaSeen } = await supabase.from("seen_status").select("last_seen").eq("username", "Saba").maybeSingle();
-    const hasanLastSeen = hasanSeen?.last_seen || 0;
-    const sabaLastSeen = sabaSeen?.last_seen || 0;
-    const { data: allMsgs } = await supabase.from("messages").select("sender,ts,type").order("ts", { ascending: false }).limit(50);
-    const ms = (allMsgs || []) as any[];
-    setHasanGlow(ms.some(m => m.sender === "Saba" && m.ts > hasanLastSeen));
-    setSabaGlow(ms.some(m => m.sender === "Hasan" && m.ts > sabaLastSeen));
-  } catch (e) {}
-};
+    try {
+      const { data: hasanSeen } = await supabase.from("seen_status").select("last_seen").eq("username", "Hasan").maybeSingle();
+      const { data: sabaSeen  } = await supabase.from("seen_status").select("last_seen").eq("username", "Saba").maybeSingle();
+      const hasanLastSeen = hasanSeen?.last_seen || 0;
+      const sabaLastSeen  = sabaSeen?.last_seen  || 0;
+      const { data: allMsgs } = await supabase.from("messages").select("sender,ts,type").order("ts", { ascending: false }).limit(50);
+      const ms = (allMsgs || []) as any[];
+      setHasanGlow(ms.some(m => m.sender === "Saba"  && m.ts > hasanLastSeen));
+      setSabaGlow (ms.some(m => m.sender === "Hasan" && m.ts > sabaLastSeen));
+    } catch (e) {}
+  };
 
   const updateSeen = async () => {
     const u = userRef.current;
@@ -1329,7 +1057,7 @@ export default function App() {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       sender: user!, text: text || null, imageData: extra.imageData || null,
       gifUrl: null, reactions: {}, ts: Date.now(),
-      replyTo: currentReply || null, type: "text", starred: false, edited: false
+      replyTo: currentReply || null, type: "text", starred: false, edited: false,
     };
     try {
       const { error } = await supabase.from("messages").insert(nm);
@@ -1346,7 +1074,7 @@ export default function App() {
     const heartMsg: Message = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       sender: user!, text: null, imageData: null, gifUrl: null,
-      reactions: {}, ts: Date.now(), type: isSuper ? "superheart" : "heart", starred: false, edited: false
+      reactions: {}, ts: Date.now(), type: isSuper ? "superheart" : "heart", starred: false, edited: false,
     };
     try {
       await supabase.from("messages").insert(heartMsg);
@@ -1369,7 +1097,6 @@ export default function App() {
       const msg = msgs.find(m => m.id === msgId);
       if (!msg) return;
       const reactions = {...msg.reactions };
-      // Remove any existing reaction by this user
       Object.keys(reactions).forEach(e => {
         reactions[e] = reactions[e].filter(u => u !== user);
         if (!reactions[e].length) delete reactions[e];
@@ -1443,7 +1170,7 @@ export default function App() {
   let lastSeenId: string | null = null;
   for (const m of myMsgs) { if (seenOther >= m.ts) lastSeenId = m.id; }
 
-  const pinnedMsgObj = pinnedData ? msgs.find(m => m.id === pinnedData.message_id) : null;
+  const pinnedMsgObj   = pinnedData ? msgs.find(m => m.id === pinnedData.message_id) : null;
   const headerSubtitle = otherTyping ? `${other} is typing…` : fLastSeen(otherLastSeen);
 
   if (view === "jar") return (
@@ -1453,7 +1180,7 @@ export default function App() {
     </>
   );
 
-    if (view === "login" || !user) return (
+  if (view === "login" || !user) return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0;font-family:'DM Sans',sans-serif}`}</style>
       <LoginScreen
@@ -1468,24 +1195,20 @@ export default function App() {
         sabaGlow={sabaGlow}
         night={night}
       />
-    </>   // ← ADD THIS
-  );      // ← AND THIS
+    </>
+  );
 
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0;}textarea,input{font-family:'DM Sans',sans-serif;}textarea:focus,input:focus{outline:none;}`}</style>
 
-      {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
-      {heartBanner && <HeartBanner sender={heartBanner.sender} isSuper={heartBanner.isSuper} onDismiss={() => setHeartBanner(null)} />}
+      {lightboxSrc    && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+      {heartBanner    && <HeartBanner sender={heartBanner.sender} isSuper={heartBanner.isSuper} onDismiss={() => setHeartBanner(null)} />}
       {deleteConfirmId && <DeleteConfirm onConfirm={() => { deleteMsg(deleteConfirmId); setDeleteConfirmId(null); }} onCancel={() => setDeleteConfirmId(null)} />}
       {showStatusPicker && <StatusPicker current={myStatus} onSet={setStatus} onClose={() => setShowStatusPicker(false)} />}
 
       <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: chatBg, position: "relative" }}>
-
-        {/* Night stars in chat too */}
         {night && <NightStars />}
-
-        {/* Background heart */}
         <BackgroundHeart count={myHeartCount} isSuper={canSuperHeart} night={night} />
 
         {/* Header */}
@@ -1504,7 +1227,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Centre heart = home */}
           <button onClick={() => { setUser(null); setView("login"); setMsgs([]); countRef.current = 0; }}
             style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: night ? "rgba(255,100,130,0.8)" : "#d4a0a8", background: "none", border: "none", cursor: "pointer", padding: "0 12px", transition: "transform 0.15s" }}
             onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.2)"}
@@ -1512,7 +1234,6 @@ export default function App() {
             ♡
           </button>
 
-          {/* Right: name + status button */}
           <div style={{ flex: 1, textAlign: "right" }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: night ? "white" : uc(user) }}>{user}</div>
             <button onClick={() => setShowStatusPicker(true)}
@@ -1536,29 +1257,31 @@ export default function App() {
               <div style={{ fontSize: 13, color: night ? "rgba(255,255,255,0.4)" : MUT }}>Just for the two of you.</div>
             </div>
           )}
-          {grouped.map(item => item.type === "day" ? (
-            <div key={item.key} style={{ textAlign: "center", fontSize: 11, color: night ? "rgba(255,255,255,0.35)" : MUT, letterSpacing: "0.08em", textTransform: "uppercase", margin: "4px 0" }}>{item.label}</div>
-          ) : item.type === "newdivider" ? (
-            <div key="newdivider" style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0" }}>
-              <div style={{ flex: 1, height: 1, background: night ? "rgba(255,255,255,0.1)" : BR }} />
-              <span style={{ fontSize: 11, color: night ? "rgba(255,255,255,0.35)" : MUT, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>New messages</span>
-              <div style={{ flex: 1, height: 1, background: night ? "rgba(255,255,255,0.1)" : BR }} />
-            </div>
-          ) : (
-            <MsgItem key={item.msg!.id} msg={item.msg!} user={user} isSeenLast={item.msg!.id === lastSeenId}
-              isFirstInRun={item.isFirstInRun!} onReact={toggleReaction}
-              onDelete={id => setDeleteConfirmId(id)}
-              onReply={handleReply} onImageClick={setLightboxSrc}
-              onMemoryJar={toggleMemoryJar} onPin={pinMessage}
-              onScrollToReply={scrollToMsg} night={night} otherUser={other}
-            />
-          ))}
+          {grouped.map(item =>
+            item.type === "day" ? (
+              <div key={item.key} style={{ textAlign: "center", fontSize: 11, color: night ? "rgba(255,255,255,0.35)" : MUT, letterSpacing: "0.08em", textTransform: "uppercase", margin: "4px 0" }}>{item.label}</div>
+            ) : item.type === "newdivider" ? (
+              <div key="newdivider" style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0" }}>
+                <div style={{ flex: 1, height: 1, background: night ? "rgba(255,255,255,0.1)" : BR }} />
+                <span style={{ fontSize: 11, color: night ? "rgba(255,255,255,0.35)" : MUT, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>New messages</span>
+                <div style={{ flex: 1, height: 1, background: night ? "rgba(255,255,255,0.1)" : BR }} />
+              </div>
+            ) : (
+              <MsgItem key={item.msg!.id} msg={item.msg!} user={user} isSeenLast={item.msg!.id === lastSeenId}
+                isFirstInRun={item.isFirstInRun!} onReact={toggleReaction}
+                onDelete={id => setDeleteConfirmId(id)}
+                onReply={handleReply} onImageClick={setLightboxSrc}
+                onMemoryJar={toggleMemoryJar} onPin={pinMessage}
+                onScrollToReply={scrollToMsg} night={night} otherUser={other}
+              />
+            )
+          )}
           <div ref={bottomRef} />
         </div>
 
         {replyTo && <ReplyPreview replyTo={replyTo} onCancel={() => setReplyTo(null)} user={user} night={night} />}
 
-        {/* Input */}
+        {/* Input bar */}
         <div style={{ background: headerBg, borderTop: `1px solid ${headerBorder}`, padding: "10px 12px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0, position: "relative", zIndex: 1 }}>
           <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} style={{ display: "none" }} />
           <button onClick={() => fileRef.current?.click()}
