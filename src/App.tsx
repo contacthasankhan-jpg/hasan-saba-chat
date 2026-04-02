@@ -447,6 +447,190 @@ function MemoryJar({ onBack, night }: { onBack: () => void; night: boolean }) {
   );
 }
 
+// ── CountdownWidget ───────────────────────────────────────────────────────────
+function CountdownWidget({ night }: { night: boolean }) {
+  const [label, setLabel] = useState(() => localStorage.getItem("cd_label") || "");
+  const [targetDate, setTargetDate] = useState(() => localStorage.getItem("cd_date") || "");
+  const [showEditor, setShowEditor] = useState(false);
+  const [draftLabel, setDraftLabel] = useState("");
+  const [draftDate, setDraftDate] = useState("");
+  const [now, setNow] = useState(Date.now());
+
+  // Tick every second
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const openEditor = () => {
+    setDraftLabel(label);
+    setDraftDate(targetDate);
+    setShowEditor(true);
+  };
+
+  const saveEditor = () => {
+    if (!draftDate) return;
+    setLabel(draftLabel.trim() || "Countdown");
+    setTargetDate(draftDate);
+    localStorage.setItem("cd_label", draftLabel.trim() || "Countdown");
+    localStorage.setItem("cd_date", draftDate);
+    setShowEditor(false);
+  };
+
+  const clearCountdown = () => {
+    setLabel(""); setTargetDate("");
+    localStorage.removeItem("cd_label");
+    localStorage.removeItem("cd_date");
+    setShowEditor(false);
+  };
+
+  // Calculate time parts
+  const diff = targetDate ? new Date(targetDate).getTime() + 86400000 - now : 0;
+  const past = diff <= 0;
+  const totalSec = past ? 0 : Math.floor(diff / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const mutColor = night ? "rgba(212,160,168,0.45)" : MUT;
+  const txtColor = night ? "#f0d8e0" : TXT;
+  const borderColor = night ? "#5a1830" : BR;
+  const bgCard = night ? "rgba(61,16,32,0.6)" : "rgba(255,255,255,0.7)";
+  const unitColor = night ? "rgba(212,160,168,0.55)" : MUT;
+
+  return (
+    <>
+      <style>{`
+        @keyframes cdPulse{0%,100%{opacity:1}50%{opacity:0.6}}
+        @keyframes cdSlideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes cdModalIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}
+      `}</style>
+
+      {/* Editor Modal */}
+      {showEditor && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 5000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 24px" }}
+          onClick={() => setShowEditor(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: night ? "#2a0f1a" : "white", borderRadius: "20px 20px 16px 16px", width: "100%", maxWidth: 420, padding: "24px 20px", boxShadow: "0 -4px 32px rgba(0,0,0,0.2)", border: `1px solid ${borderColor}`, animation: "cdModalIn 0.2s ease" }}
+          >
+            {/* Title */}
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, color: txtColor, marginBottom: 20, textAlign: "center" }}>
+              Set Countdown ✦
+            </div>
+
+            {/* Label input */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, color: mutColor, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                What are you counting down to?
+              </label>
+              <input
+                value={draftLabel}
+                onChange={e => setDraftLabel(e.target.value)}
+                placeholder="e.g. Our Anniversary ♡"
+                autoFocus
+                style={{ width: "100%", border: `1.5px solid ${borderColor}`, borderRadius: 12, padding: "10px 14px", fontSize: 14, color: txtColor, background: night ? "rgba(255,255,255,0.07)" : "#fdf8f5", fontFamily: "'DM Sans', sans-serif", outline: "none" }}
+              />
+            </div>
+
+            {/* Date input */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 11, color: mutColor, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                Target date
+              </label>
+              <input
+                type="date"
+                value={draftDate}
+                onChange={e => setDraftDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                style={{ width: "100%", border: `1.5px solid ${borderColor}`, borderRadius: 12, padding: "10px 14px", fontSize: 14, color: txtColor, background: night ? "rgba(255,255,255,0.07)" : "#fdf8f5", fontFamily: "'DM Sans', sans-serif", outline: "none" }}
+              />
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: "flex", gap: 10 }}>
+              {label && (
+                <button
+                  onClick={clearCountdown}
+                  style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1.5px solid ${borderColor}`, background: "none", fontSize: 13, color: "#dc3535", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={() => setShowEditor(false)}
+                style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1.5px solid ${borderColor}`, background: "none", fontSize: 13, color: mutColor, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEditor}
+                disabled={!draftDate}
+                style={{ flex: 2, padding: "11px", borderRadius: 12, border: "none", background: draftDate ? H : borderColor, fontSize: 13, color: "white", cursor: draftDate ? "pointer" : "default", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, opacity: draftDate ? 1 : 0.5 }}
+              >
+                Save ✦
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Countdown display */}
+      <div
+        onClick={openEditor}
+        style={{ marginTop: 32, cursor: "pointer", animation: "cdSlideUp 0.5s ease", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 24px", borderRadius: 20, background: bgCard, border: `1px solid ${borderColor}`, backdropFilter: "blur(8px)", maxWidth: 320, width: "100%", boxShadow: night ? "0 4px 20px rgba(0,0,0,0.3)" : "0 2px 16px rgba(0,0,0,0.06)", transition: "transform 0.15s, box-shadow 0.15s" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.02)"; (e.currentTarget as HTMLDivElement).style.boxShadow = night ? "0 6px 28px rgba(0,0,0,0.4)" : "0 4px 24px rgba(0,0,0,0.1)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1)"; (e.currentTarget as HTMLDivElement).style.boxShadow = night ? "0 4px 20px rgba(0,0,0,0.3)" : "0 2px 16px rgba(0,0,0,0.06)"; }}
+      >
+        {/* Label */}
+        <div style={{ fontSize: 12, color: mutColor, letterSpacing: "0.1em", textTransform: "uppercase", textAlign: "center" }}>
+          {label || "tap to set a countdown ✦"}
+        </div>
+
+        {targetDate && !past && (
+          <>
+            {/* Numbers row */}
+            <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
+              {[{ val: days, unit: "days" }, { val: hours, unit: "hrs" }, { val: mins, unit: "min" }, { val: secs, unit: "sec" }].map(({ val, unit }, i) => (
+                <div key={unit} style={{ display: "flex", alignItems: "flex-end", gap: i < 3 ? 6 : 0 }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: unit === "days" ? 42 : 32, fontWeight: 500, color: txtColor, lineHeight: 1, animation: unit === "sec" ? "cdPulse 1s ease-in-out infinite" : "none", minWidth: unit === "days" ? 52 : 38, textAlign: "center" }}>
+                      {unit === "days" ? days : pad(val)}
+                    </div>
+                    <div style={{ fontSize: 9, color: unitColor, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 2 }}>{unit}</div>
+                  </div>
+                  {i < 3 && <div style={{ fontSize: 22, color: mutColor, paddingBottom: 14, lineHeight: 1 }}>:</div>}
+                </div>
+              ))}
+            </div>
+
+            {/* Target date label */}
+            <div style={{ fontSize: 11, color: mutColor, letterSpacing: "0.06em" }}>
+              {new Date(targetDate).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+            </div>
+          </>
+        )}
+
+        {targetDate && past && (
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: S, fontStyle: "italic" }}>
+            The day has come ♡
+          </div>
+        )}
+
+        {!targetDate && (
+          <div style={{ fontSize: 11, color: mutColor, fontStyle: "italic" }}>
+            — — : — — : — — : — —
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ── LoginScreen ───────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
   onLogin: (name: string) => void; onJar: () => void;
@@ -498,12 +682,15 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
           })}
         </div>
 
-        <button onClick={onJar}
+                <button onClick={onJar}
           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Sans', sans-serif", padding: "6px 12px", borderRadius: 20 }}
           onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = night ? "#f0d8e0" : TXT}
           onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = night ? "rgba(212,160,168,0.5)" : MUT}>
           ✦ Memory Jar
         </button>
+
+        {/* ↓ ADD THIS ↓ */}
+        <CountdownWidget night={night} />
       </div>
     </div>
   );
