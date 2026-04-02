@@ -446,11 +446,184 @@ function MemoryJar({ onBack, night }: { onBack: () => void; night: boolean }) {
     </div>
   );
 }
+// ── FlipNumber ────────────────────────────────────────────────────────────────
+function FlipNumber({ value, color }: { value: number; color: string }) {
+  const [displayed, setDisplayed] = useState(value);
+  const [flipping, setFlipping] = useState(false);
 
+  useEffect(() => {
+    if (value === displayed) return;
+    setFlipping(true);
+    const t = setTimeout(() => {
+      setDisplayed(value);
+      setFlipping(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [value]);
+
+  return (
+    <>
+      <style>{`
+        @keyframes flipOut {
+          0%   { transform: rotateX(0deg);    opacity: 1; }
+          100% { transform: rotateX(-90deg);  opacity: 0; }
+        }
+        @keyframes flipIn {
+          0%   { transform: rotateX(90deg);   opacity: 0; }
+          100% { transform: rotateX(0deg);    opacity: 1; }
+        }
+      `}</style>
+      <div style={{
+        perspective:     400,
+        display:         "inline-block",
+      }}>
+        <div style={{
+          fontFamily:      "'Cormorant Garamond', serif",
+          fontSize:        28,
+          fontWeight:      500,
+          color:           color,
+          lineHeight:      1,
+          display:         "inline-block",
+          transformOrigin: "center center",
+          animation:       flipping
+            ? "flipOut 0.3s ease forwards"
+            : "flipIn 0.3s ease forwards",
+        }}>
+          {displayed}
+        </div>
+      </div>
+    </>
+  );
+}
+// ── TimeSince ─────────────────────────────────────────────────────────────────
+function TimeSince({ night }: { night: boolean }) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60000); // update every minute
+    return () => clearInterval(t);
+  }, []);
+
+  const MET_DATE        = new Date("2025-01-27T00:00:00").getTime();
+  const ANNIVERSARY_DATE = new Date("2025-03-18T00:00:00").getTime();
+
+  const daysSince = (from: number) =>
+    Math.floor((now - from) / (1000 * 60 * 60 * 24));
+
+  const metDays  = daysSince(MET_DATE);
+  const annivDays = daysSince(ANNIVERSARY_DATE);
+
+  const mutColor  = night ? "rgba(212,160,168,0.5)"  : MUT;
+  const txtColor  = night ? "#f0d8e0"                : TXT;
+  const cardBg    = night ? "rgba(61,16,32,0.45)"    : "rgba(255,255,255,0.55)";
+  const borderCol = night ? "rgba(90,24,48,0.6)"     : "rgba(240,221,216,0.8)";
+  const numColor  = night ? "#f0d8e0"                : TXT;
+  const accentH   = night ? "rgba(255,100,130,0.7)"  : H;
+  const accentS   = night ? "rgba(5,150,105,0.8)"    : S;
+
+  const items = [
+    {
+      emoji:   "✦",
+      label:   "Time together",
+      days:    metDays,
+      accent:  accentH,
+      date:    "since Jan 27",
+    },
+    {
+      emoji:   "♡",
+      label:   "Anniversary",
+      days:    annivDays,
+      accent:  accentS,
+      date:    "since Mar 18",
+    },
+  ];
+
+  return (
+    <div style={{
+      display:        "flex",
+      gap:            10,
+      marginTop:      20,
+      width:          "100%",
+      maxWidth:       320,
+    }}>
+      <style>{`
+        @keyframes tsSlideUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0);    }
+        }
+      `}</style>
+
+      {items.map((item, i) => (
+        <div key={i} style={{
+          flex:           1,
+          background:     cardBg,
+          border:         `1px solid ${borderCol}`,
+          borderRadius:   16,
+          padding:        "10px 12px",
+          display:        "flex",
+          flexDirection:  "column",
+          alignItems:     "center",
+          gap:            2,
+          backdropFilter: "blur(8px)",
+          animation:      `tsSlideUp 0.5s ${i * 0.1}s ease both`,
+          boxShadow:      night
+            ? "0 2px 12px rgba(0,0,0,0.25)"
+            : "0 1px 8px rgba(0,0,0,0.04)",
+        }}>
+          {/* emoji accent */}
+          <div style={{
+            fontSize:      13,
+            color:         item.accent,
+            lineHeight:    1,
+            marginBottom:  2,
+          }}>
+            {item.emoji}
+          </div>
+
+                   {/* day count */}
+          <FlipNumber value={item.days} color={numColor} />
+
+          {/* "days" label */}
+          <div style={{
+            fontSize:       9,
+            color:          mutColor,
+            letterSpacing:  "0.12em",
+            textTransform:  "uppercase",
+          }}>
+            days
+          </div>
+
+          {/* title */}
+          <div style={{
+            fontSize:       11,
+            color:          txtColor,
+            fontFamily:     "'Cormorant Garamond', serif",
+            fontStyle:      "italic",
+            marginTop:      4,
+            textAlign:      "center",
+            lineHeight:     1.3,
+          }}>
+            {item.label}
+          </div>
+
+          {/* subtle date */}
+          <div style={{
+            fontSize:       9,
+            color:          mutColor,
+            letterSpacing:  "0.06em",
+            marginTop:      1,
+          }}>
+            {item.date}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 // ── CountdownWidget ───────────────────────────────────────────────────────────
 function CountdownWidget({ night }: { night: boolean }) {
-  const [label, setLabel] = useState(() => localStorage.getItem("cd_label") || "");
-  const [targetDate, setTargetDate] = useState(() => localStorage.getItem("cd_date") || "");
+  const [label, setLabel] = useState("");
+  const [targetDate, setTargetDate] = useState("");
   const [showEditor, setShowEditor] = useState(false);
   const [draftLabel, setDraftLabel] = useState("");
   const [draftDate, setDraftDate] = useState("");
@@ -462,27 +635,45 @@ function CountdownWidget({ night }: { night: boolean }) {
     return () => clearInterval(t);
   }, []);
 
+  // Load from Supabase on mount
+  useEffect(() => {
+    supabase.from("countdown").select("*").eq("id", "shared").maybeSingle().then(({ data }) => {
+        if (data) {
+          setLabel(data.label || "");
+          setTargetDate(data.target_date || "");
+        }
+      });
+  }, []);
+
   const openEditor = () => {
     setDraftLabel(label);
     setDraftDate(targetDate);
     setShowEditor(true);
   };
 
-  const saveEditor = () => {
+  // Save to Supabase instead of localStorage
+  const saveEditor = async () => {
     if (!draftDate) return;
-    setLabel(draftLabel.trim() || "Countdown");
-    setTargetDate(draftDate);
-    localStorage.setItem("cd_label", draftLabel.trim() || "Countdown");
-    localStorage.setItem("cd_date", draftDate);
+    const newLabel = draftLabel.trim() || "Countdown";
+    const newDate = draftDate;
+    setLabel(newLabel);
+    setTargetDate(newDate);
+    await supabase.from("countdown").upsert(
+      { id: "shared", label: newLabel, target_date: newDate, updated_at: Date.now() },
+      { onConflict: "id" }
+    );
     setShowEditor(false);
   };
 
-  const clearCountdown = () => {
-    setLabel(""); setTargetDate("");
-    localStorage.removeItem("cd_label");
-    localStorage.removeItem("cd_date");
+  // Clear from Supabase
+  const clearCountdown = async () => {
+    setLabel("");
+    setTargetDate("");
+    await supabase.from("countdown").delete().eq("id", "shared");
     setShowEditor(false);
   };
+
+  //... rest of the component (diff/past calculations + JSX) stays exactly the same
 
   // Calculate time parts
   const diff = targetDate ? new Date(targetDate).getTime() + 86400000 - now : 0;
@@ -689,7 +880,7 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
           ✦ Memory Jar
         </button>
 
-        {/* ↓ ADD THIS ↓ */}
+         <TimeSince night={night} />
         <CountdownWidget night={night} />
       </div>
     </div>
