@@ -504,8 +504,8 @@ function TimeSince({ night }: { night: boolean }) {
     return () => clearInterval(t);
   }, []);
 
-  const MET_DATE        = new Date("2025-01-27T00:00:00").getTime();
-  const ANNIVERSARY_DATE = new Date("2025-03-18T00:00:00").getTime();
+  const MET_DATE        = new Date("2026-01-27T00:00:00").getTime();
+  const ANNIVERSARY_DATE = new Date("2026-03-18T00:00:00").getTime();
 
   const daysSince = (from: number) =>
     Math.floor((now - from) / (1000 * 60 * 60 * 24));
@@ -838,7 +838,39 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
 
       {night && <NightStars />}
 
-      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+
+        {/* ── Time Since strip at the very top ── */}
+        <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320, marginBottom: 24 }}>
+          {[
+            { emoji: "✦", label: "Together", days: Math.floor((Date.now() - new Date("2026-01-27T00:00:00").getTime()) / 86400000), date: "Jan 27" },
+            { emoji: "♡", label: "Anniversary", days: Math.floor((Date.now() - new Date("2026-03-18T00:00:00").getTime()) / 86400000), date: "Mar 18" },
+          ].map((item, i) => (
+            <div key={i} style={{
+              flex: 1,
+              background: night ? "rgba(61,16,32,0.45)" : "rgba(255,255,255,0.55)",
+              border: `1px solid ${night ? "rgba(90,24,48,0.6)" : "rgba(240,221,216,0.8)"}`,
+              borderRadius: 12,
+              padding: "7px 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              backdropFilter: "blur(8px)",
+              boxShadow: night ? "0 2px 12px rgba(0,0,0,0.25)" : "0 1px 8px rgba(0,0,0,0.04)",
+            }}>
+              <div style={{ fontSize: 11, color: night ? "rgba(255,100,130,0.7)" : H }}>{item.emoji}</div>
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+                  <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 500, color: night ? "#f0d8e0" : TXT, lineHeight: 1 }}>{item.days}</span>
+                  <span style={{ fontSize: 8, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.1em", textTransform: "uppercase" }}>days</span>
+                </div>
+                <div style={{ fontSize: 9, color: night ? "rgba(212,160,168,0.5)" : MUT, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", whiteSpace: "nowrap" }}>{item.label} · {item.date}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Central title block ── */}
         {night && (
           <div style={{ fontSize: 11, color: "rgba(212,160,168,0.55)", letterSpacing: "0.18em", textTransform: "uppercase", animation: "nightFade 1.5s ease", marginBottom: 14 }}>
             🌙   night mode   🌙
@@ -872,6 +904,16 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
             );
           })}
         </div>
+
+        <button onClick={onJar}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Sans', sans-serif", padding: "6px 12px", borderRadius: 20 }}
+          onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = night ? "#f0d8e0" : TXT}
+          onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = night ? "rgba(212,160,168,0.5)" : MUT}>
+          ✦ Memory Jar
+        </button>
+
+        <CountdownWidget night={night} />
+      </div>
 
                 <button onClick={onJar}
           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Sans', sans-serif", padding: "6px 12px", borderRadius: 20 }}
