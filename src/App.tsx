@@ -438,7 +438,50 @@ function MemoryJar({ onBack, night }: { onBack: () => void; night: boolean }) {
     </div>
   );
 }
+// ── FlipNumber ────────────────────────────────────────────────────────────────
+function FlipNumber({ value, color, fontSize }: { value: number; color: string; fontSize?: number }) {
+  const [displayed, setDisplayed] = useState(value);
+  const [flipping, setFlipping] = useState(false);
 
+  useEffect(() => {
+    if (value === displayed) return;
+    setFlipping(true);
+    const t = setTimeout(() => {
+      setDisplayed(value);
+      setFlipping(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [value]);
+
+  return (
+    <>
+      <style>{`
+        @keyframes flipOut {
+          0%   { transform: rotateX(0deg);   opacity: 1; }
+          100% { transform: rotateX(-90deg); opacity: 0; }
+        }
+        @keyframes flipIn {
+          0%   { transform: rotateX(90deg);  opacity: 0; }
+          100% { transform: rotateX(0deg);   opacity: 1; }
+        }
+      `}</style>
+      <div style={{ perspective: 400, display: "inline-block" }}>
+        <div style={{
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: fontSize ?? 20,
+          fontWeight: 500,
+          color,
+          lineHeight: 1,
+          display: "inline-block",
+          transformOrigin: "center center",
+          animation: flipping ? "flipOut 0.3s ease forwards" : "flipIn 0.3s ease forwards",
+        }}>
+          {displayed}
+        </div>
+      </div>
+    </>
+  );
+}
 // ── CountdownWidget ───────────────────────────────────────────────────────────
 function CountdownWidget({ night }: { night: boolean }) {
   const [label, setLabel] = useState("");
@@ -575,8 +618,8 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
   const nightBg = "linear-gradient(160deg, #2a0f1a 0%, #1e0d16 50%, #2d1020 100%)";
 
   const timeSinceItems = [
-    { emoji: "✦", label: "Together",    days: Math.floor((Date.now() - new Date("2026-01-27T00:00:00").getTime()) / 86400000), date: "Jan 27" },
-    { emoji: "♡", label: "Anniversary", days: Math.floor((Date.now() - new Date("2026-03-18T00:00:00").getTime()) / 86400000), date: "Mar 18" },
+    { emoji: "✦", label: "Since we met",    days: Math.floor((Date.now() - new Date("2026-01-27T00:00:00").getTime()) / 86400000), date: "Jan 27" },
+    { emoji: "♡", label: " Since Anniversary", days: Math.floor((Date.now() - new Date("2026-03-18T00:00:00").getTime()) / 86400000), date: "Mar 18" },
   ];
 
   return (
@@ -592,7 +635,7 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
       <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
 
         {/* ── Time Since strip ── */}
-        <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320, marginBottom: 28 }}>
+        <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320, marginBottom: 60 }}>
           {timeSinceItems.map((item, i) => (
             <div key={i} style={{
               flex: 1, background: night ? "rgba(61,16,32,0.45)" : "rgba(255,255,255,0.55)",
@@ -602,8 +645,8 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
             }}>
               <div style={{ fontSize: 11, color: night ? "rgba(255,100,130,0.7)" : H }}>{item.emoji}</div>
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-                  <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 500, color: night ? "#f0d8e0" : TXT, lineHeight: 1 }}>{item.days}</span>
+                                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+                  <FlipNumber value={item.days} color={night ? "#f0d8e0" : TXT} fontSize={20} />
                   <span style={{ fontSize: 8, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.1em", textTransform: "uppercase" }}>days</span>
                 </div>
                 <div style={{ fontSize: 9, color: night ? "rgba(212,160,168,0.5)" : MUT, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", whiteSpace: "nowrap" }}>{item.label} · {item.date}</div>
