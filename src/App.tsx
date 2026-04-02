@@ -441,17 +441,35 @@ function MemoryJar({ onBack, night }: { onBack: () => void; night: boolean }) {
 // ── FlipNumber ────────────────────────────────────────────────────────────────
 function FlipNumber({ value, color, fontSize }: { value: number; color: string; fontSize?: number }) {
   const [displayed, setDisplayed] = useState(value);
-  const [flipping, setFlipping] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "out" | "in">("idle");
+  const pendingValue = useRef(value);
 
   useEffect(() => {
-    if (value === displayed) return;
-    setFlipping(true);
-    const t = setTimeout(() => {
+    if (value === pendingValue.current) return;
+    pendingValue.current = value;
+
+    // 1. Kick off the flip-out
+    setPhase("out");
+
+    // 2. Halfway through, swap the number and flip in
+    const swap = setTimeout(() => {
       setDisplayed(value);
-      setFlipping(false);
-    }, 300);
-    return () => clearTimeout(t);
+      setPhase("in");
+    }, 200); // matches flipOut duration
+
+    // 3. Return to idle so the animation can re-trigger next time
+    const reset = setTimeout(() => setPhase("idle"), 400);
+
+    return () => {
+      clearTimeout(swap);
+      clearTimeout(reset);
+    };
   }, [value]);
+
+  const animationName =
+    phase === "out" ? "flipOut" :
+    phase === "in"  ? "flipIn"  :
+    "none";
 
   return (
     <>
@@ -466,16 +484,20 @@ function FlipNumber({ value, color, fontSize }: { value: number; color: string; 
         }
       `}</style>
       <div style={{ perspective: 400, display: "inline-block" }}>
-        <div style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: fontSize ?? 20,
-          fontWeight: 500,
-          color,
-          lineHeight: 1,
-          display: "inline-block",
-          transformOrigin: "center center",
-          animation: flipping ? "flipOut 0.3s ease forwards" : "flipIn 0.3s ease forwards",
-        }}>
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: fontSize ?? 20,
+            fontWeight: 500,
+            color,
+            lineHeight: 1,
+            display: "inline-block",
+            transformOrigin: "center center",
+            animation: animationName !== "none"
+              ? `${animationName} 0.2s ease forwards`
+              : "none",
+          }}
+        >
           {displayed}
         </div>
       </div>
