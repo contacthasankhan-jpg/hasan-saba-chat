@@ -438,6 +438,7 @@ function MemoryJar({ onBack, night }: { onBack: () => void; night: boolean }) {
     </div>
   );
 }
+
 // ── FlipNumber ────────────────────────────────────────────────────────────────
 function FlipNumber({ value, color, fontSize }: { value: number; color: string; fontSize?: number }) {
   const [displayed, setDisplayed] = useState(value);
@@ -447,63 +448,50 @@ function FlipNumber({ value, color, fontSize }: { value: number; color: string; 
   useEffect(() => {
     if (value === pendingValue.current) return;
     pendingValue.current = value;
-
-    // 1. Kick off the flip-out
     setPhase("out");
-
-    // 2. Halfway through, swap the number and flip in
-    const swap = setTimeout(() => {
-      setDisplayed(value);
-      setPhase("in");
-    }, 200); // matches flipOut duration
-
-    // 3. Return to idle so the animation can re-trigger next time
+    const swap = setTimeout(() => { setDisplayed(value); setPhase("in"); }, 200);
     const reset = setTimeout(() => setPhase("idle"), 400);
-
-    return () => {
-      clearTimeout(swap);
-      clearTimeout(reset);
-    };
+    return () => { clearTimeout(swap); clearTimeout(reset); };
   }, [value]);
 
-  const animationName =
-    phase === "out" ? "flipOut" :
-    phase === "in"  ? "flipIn"  :
-    "none";
+  const animationName = phase === "out" ? "flipOut" : phase === "in" ? "flipIn" : "none";
 
   return (
     <>
       <style>{`
-        @keyframes flipOut {
-          0%   { transform: rotateX(0deg);   opacity: 1; }
-          100% { transform: rotateX(-90deg); opacity: 0; }
-        }
-        @keyframes flipIn {
-          0%   { transform: rotateX(90deg);  opacity: 0; }
-          100% { transform: rotateX(0deg);   opacity: 1; }
-        }
+        @keyframes flipOut{0%{transform:rotateX(0deg);opacity:1}100%{transform:rotateX(-90deg);opacity:0}}
+        @keyframes flipIn{0%{transform:rotateX(90deg);opacity:0}100%{transform:rotateX(0deg);opacity:1}}
       `}</style>
       <div style={{ perspective: 400, display: "inline-block" }}>
-        <div
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: fontSize ?? 20,
-            fontWeight: 500,
-            color,
-            lineHeight: 1,
-            display: "inline-block",
-            transformOrigin: "center center",
-            animation: animationName !== "none"
-              ? `${animationName} 0.2s ease forwards`
-              : "none",
-          }}
-        >
+        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: fontSize ?? 20, fontWeight: 500, color, lineHeight: 1, display: "inline-block", transformOrigin: "center center", animation: animationName !== "none" ? `${animationName} 0.2s ease forwards` : "none" }}>
           {displayed}
         </div>
       </div>
     </>
   );
 }
+
+// ── TypingBubble ──────────────────────────────────────────────────────────────
+function TypingBubble({ color, bubbleBg }: { color: string; bubbleBg: string }) {
+  return (
+    <>
+      <style>{`
+        @keyframes typingDot{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}
+        @keyframes bubblePop{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
+      `}</style>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: 2, width: "100%", boxSizing: "border-box", padding: "0 8px", animation: "bubblePop 0.2s ease forwards" }}>
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
+          <div style={{ background: bubbleBg, padding: "10px 16px", borderRadius: 18, borderBottomLeftRadius: 4, display: "flex", gap: 5, alignItems: "center" }}>
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: color, display: "inline-block", animation: `typingDot 1.2s ${i * 0.2}s ease-in-out infinite` }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── CountdownWidget ───────────────────────────────────────────────────────────
 function CountdownWidget({ night }: { night: boolean }) {
   const [label, setLabel] = useState("");
@@ -520,8 +508,8 @@ function CountdownWidget({ night }: { night: boolean }) {
 
   useEffect(() => {
     supabase.from("countdown").select("*").eq("id", "shared").maybeSingle().then(({ data }) => {
-        if (data) { setLabel(data.label || ""); setTargetDate(data.target_date || ""); }
-      });
+      if (data) { setLabel(data.label || ""); setTargetDate(data.target_date || ""); }
+    });
   }, []);
 
   const openEditor = () => { setDraftLabel(label); setDraftDate(targetDate); setShowEditor(true); };
@@ -530,10 +518,7 @@ function CountdownWidget({ night }: { night: boolean }) {
     if (!draftDate) return;
     const newLabel = draftLabel.trim() || "Countdown";
     setLabel(newLabel); setTargetDate(draftDate);
-    await supabase.from("countdown").upsert(
-      { id: "shared", label: newLabel, target_date: draftDate, updated_at: Date.now() },
-      { onConflict: "id" }
-    );
+    await supabase.from("countdown").upsert({ id: "shared", label: newLabel, target_date: draftDate, updated_at: Date.now() }, { onConflict: "id" });
     setShowEditor(false);
   };
 
@@ -552,11 +537,11 @@ function CountdownWidget({ night }: { night: boolean }) {
   const secs     = totalSec % 60;
   const pad      = (n: number) => String(n).padStart(2, "0");
 
-  const mutColor   = night ? "rgba(212,160,168,0.45)" : MUT;
-  const txtColor   = night ? "#f0d8e0" : TXT;
+  const mutColor    = night ? "rgba(212,160,168,0.45)" : MUT;
+  const txtColor    = night ? "#f0d8e0" : TXT;
   const borderColor = night ? "#5a1830" : BR;
-  const bgCard     = night ? "rgba(61,16,32,0.6)" : "rgba(255,255,255,0.7)";
-  const unitColor  = night ? "rgba(212,160,168,0.55)" : MUT;
+  const bgCard      = night ? "rgba(61,16,32,0.6)" : "rgba(255,255,255,0.7)";
+  const unitColor   = night ? "rgba(212,160,168,0.55)" : MUT;
 
   return (
     <>
@@ -567,10 +552,8 @@ function CountdownWidget({ night }: { night: boolean }) {
       `}</style>
 
       {showEditor && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 5000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 24px" }}
-          onClick={() => setShowEditor(false)}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ background: night ? "#2a0f1a" : "white", borderRadius: "20px 20px 16px 16px", width: "100%", maxWidth: 420, padding: "24px 20px", boxShadow: "0 -4px 32px rgba(0,0,0,0.2)", border: `1px solid ${borderColor}`, animation: "cdModalIn 0.2s ease" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 5000, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 24px" }} onClick={() => setShowEditor(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: night ? "#2a0f1a" : "white", borderRadius: "20px 20px 16px 16px", width: "100%", maxWidth: 420, padding: "24px 20px", boxShadow: "0 -4px 32px rgba(0,0,0,0.2)", border: `1px solid ${borderColor}`, animation: "cdModalIn 0.2s ease" }}>
             <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, color: txtColor, marginBottom: 20, textAlign: "center" }}>Set Countdown ✦</div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 11, color: mutColor, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>What are you counting down to?</label>
@@ -587,8 +570,7 @@ function CountdownWidget({ night }: { night: boolean }) {
                 <button onClick={clearCountdown} style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1.5px solid ${borderColor}`, background: "none", fontSize: 13, color: "#dc3535", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Clear</button>
               )}
               <button onClick={() => setShowEditor(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1.5px solid ${borderColor}`, background: "none", fontSize: 13, color: mutColor, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
-              <button onClick={saveEditor} disabled={!draftDate}
-                style={{ flex: 2, padding: "11px", borderRadius: 12, border: "none", background: draftDate ? H : borderColor, fontSize: 13, color: "white", cursor: draftDate ? "pointer" : "default", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, opacity: draftDate ? 1 : 0.5 }}>Save ✦</button>
+              <button onClick={saveEditor} disabled={!draftDate} style={{ flex: 2, padding: "11px", borderRadius: 12, border: "none", background: draftDate ? H : borderColor, fontSize: 13, color: "white", cursor: draftDate ? "pointer" : "default", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, opacity: draftDate ? 1 : 0.5 }}>Save ✦</button>
             </div>
           </div>
         </div>
@@ -633,15 +615,17 @@ function CountdownWidget({ night }: { night: boolean }) {
 }
 
 // ── LoginScreen ───────────────────────────────────────────────────────────────
-function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
+function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, hasanUnread, sabaUnread, night }: {
   onLogin: (name: string) => void; onJar: () => void;
-  hasanGlow: boolean; sabaGlow: boolean; night: boolean;
+  hasanGlow: boolean; sabaGlow: boolean;
+  hasanUnread: number; sabaUnread: number;
+  night: boolean;
 }) {
   const nightBg = "linear-gradient(160deg, #2a0f1a 0%, #1e0d16 50%, #2d1020 100%)";
 
   const timeSinceItems = [
-    { emoji: "✦", label: "Since we met",    days: Math.floor((Date.now() - new Date("2026-01-27T00:00:00").getTime()) / 86400000), date: "Jan 27" },
-    { emoji: "♡", label: " Since Anniversary", days: Math.floor((Date.now() - new Date("2026-03-18T00:00:00").getTime()) / 86400000), date: "Mar 18" },
+    { emoji: "✦", label: "Since we met",       days: Math.floor((Date.now() - new Date("2026-01-27T00:00:00").getTime()) / 86400000), date: "Jan 27" },
+    { emoji: "♡", label: "Since Anniversary",  days: Math.floor((Date.now() - new Date("2026-03-18T00:00:00").getTime()) / 86400000), date: "Mar 18" },
   ];
 
   return (
@@ -656,18 +640,13 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
 
       <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
 
-        {/* ── Time Since strip ── */}
+        {/* Time Since strip */}
         <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320, marginBottom: 60 }}>
           {timeSinceItems.map((item, i) => (
-            <div key={i} style={{
-              flex: 1, background: night ? "rgba(61,16,32,0.45)" : "rgba(255,255,255,0.55)",
-              border: `1px solid ${night ? "rgba(90,24,48,0.6)" : "rgba(240,221,216,0.8)"}`,
-              borderRadius: 12, padding: "7px 10px", display: "flex", alignItems: "center", gap: 7,
-              backdropFilter: "blur(8px)", boxShadow: night ? "0 2px 12px rgba(0,0,0,0.25)" : "0 1px 8px rgba(0,0,0,0.04)",
-            }}>
+            <div key={i} style={{ flex: 1, background: night ? "rgba(61,16,32,0.45)" : "rgba(255,255,255,0.55)", border: `1px solid ${night ? "rgba(90,24,48,0.6)" : "rgba(240,221,216,0.8)"}`, borderRadius: 12, padding: "7px 10px", display: "flex", alignItems: "center", gap: 7, backdropFilter: "blur(8px)", boxShadow: night ? "0 2px 12px rgba(0,0,0,0.25)" : "0 1px 8px rgba(0,0,0,0.04)" }}>
               <div style={{ fontSize: 11, color: night ? "rgba(255,100,130,0.7)" : H }}>{item.emoji}</div>
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
                   <FlipNumber value={item.days} color={night ? "#f0d8e0" : TXT} fontSize={20} />
                   <span style={{ fontSize: 8, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.1em", textTransform: "uppercase" }}>days</span>
                 </div>
@@ -677,42 +656,45 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
           ))}
         </div>
 
-        {/* ── Title block ── */}
+        {/* Title block */}
         {night && (
           <div style={{ fontSize: 11, color: "rgba(212,160,168,0.55)", letterSpacing: "0.18em", textTransform: "uppercase", animation: "nightFade 1.5s ease", marginBottom: 14 }}>
             🌙   night mode   🌙
           </div>
         )}
         <p style={{ fontSize: 16, color: night ? "rgba(212,160,168,0.55)" : MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>Tickle the tism'</p>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 46, fontWeight: 400, color: night ? "#f0d8e0" : TXT, marginBottom: 6, letterSpacing: -0.5, animation: night ? "nightTitleGlow 3s ease-in-out infinite" : "none" }}>
-          Hasan & Saba
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 46, fontWeight: 400, color: night ? "#f0d8e0" : TXT, marginBottom: 6, letterSpacing: -0.5, animation: night ? "nightTitleGlow 3s ease-in-out infinite" : "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
+          <span>Hasan</span>
+          <span style={{ color: H, fontSize: 36, lineHeight: 1 }}>♥</span>
+          <span>Saba</span>
         </h1>
         <p style={{ fontSize: 16, color: night ? "rgba(212,160,168,0.55)" : MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 52 }}>The Seventh Infinity Stone</p>
         <p style={{ fontSize: 11, color: night ? "rgba(212,160,168,0.4)" : MUT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>Who are you?</p>
 
-        {/* ── Login buttons ── */}
+        {/* Login buttons */}
         <div style={{ display: "flex", gap: 14, marginBottom: 36 }}>
           {(["Hasan", "Saba"] as const).map(n => {
-            const glow = n === "Hasan" ? hasanGlow : sabaGlow;
+            const glow   = n === "Hasan" ? hasanGlow   : sabaGlow;
+            const unread = n === "Hasan" ? hasanUnread : sabaUnread;
             return (
-              <button key={n} onClick={() => onLogin(n)}
-                style={{
-                  padding: "13px 40px", borderRadius: 50, border: `2px solid ${uc(n)}`,
-                  background: night ? "rgba(255,255,255,0.06)" : "white",
-                  fontSize: 15, fontWeight: 500, color: uc(n), cursor: "pointer",
-                  fontFamily: "'DM Sans', sans-serif", transition: "background 0.15s",
-                  animation: glow ? "glowPulse 1.5s ease-in-out infinite" : "none",
-                  boxShadow: glow ? `0 0 12px 4px ${uc(n)}55, 0 0 24px 8px ${uc(n)}33` : "none",
-                }}
-                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = night ? "rgba(255,255,255,0.1)" : ul(n)}
-                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = night ? "rgba(255,255,255,0.06)" : "white"}>
-                {n}
-              </button>
+              <div key={n} style={{ position: "relative" }}>
+                <button onClick={() => onLogin(n)}
+                  style={{ padding: "13px 40px", borderRadius: 50, border: `2px solid ${uc(n)}`, background: night ? "rgba(255,255,255,0.06)" : "white", fontSize: 15, fontWeight: 500, color: uc(n), cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "background 0.15s", animation: glow ? "glowPulse 1.5s ease-in-out infinite" : "none", boxShadow: glow ? `0 0 12px 4px ${uc(n)}55, 0 0 24px 8px ${uc(n)}33` : "none" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = night ? "rgba(255,255,255,0.1)" : ul(n)}
+                  onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = night ? "rgba(255,255,255,0.06)" : "white"}>
+                  {n}
+                </button>
+                {unread > 0 && (
+                  <div style={{ position: "absolute", top: -6, right: -6, background: uc(n), color: "white", borderRadius: "50%", minWidth: 18, height: 18, fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px", boxShadow: "0 1px 4px rgba(0,0,0,0.25)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1 }}>
+                    {unread}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
 
-        {/* ── Memory Jar ── */}
+        {/* Memory Jar */}
         <button onClick={onJar}
           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: night ? "rgba(212,160,168,0.5)" : MUT, letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Sans', sans-serif", padding: "6px 12px", borderRadius: 20 }}
           onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = night ? "#f0d8e0" : TXT}
@@ -720,9 +702,8 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, night }: {
           ✦ Memory Jar
         </button>
 
-        {/* ── Countdown ── */}
+        {/* Countdown */}
         <CountdownWidget night={night} />
-
       </div>
     </div>
   );
@@ -926,14 +907,16 @@ export default function App() {
   const [showStatusPicker, setShowStatusPicker] = useState(false);
   const [hasanGlow, setHasanGlow] = useState(false);
   const [sabaGlow, setSabaGlow] = useState(false);
+  const [hasanUnread, setHasanUnread] = useState(0);
+  const [sabaUnread, setSabaUnread] = useState(0);
   const [night, setNight] = useState(isNightMode());
 
-  const bottomRef   = useRef<HTMLDivElement>(null);
-  const inputRef    = useRef<HTMLTextAreaElement>(null);
-  const fileRef     = useRef<HTMLInputElement>(null);
-  const countRef    = useRef(0);
-  const userRef     = useRef<string | null>(null);
-  const subRef      = useRef<any>(null);
+  const bottomRef           = useRef<HTMLDivElement>(null);
+  const inputRef            = useRef<HTMLTextAreaElement>(null);
+  const fileRef             = useRef<HTMLInputElement>(null);
+  const countRef            = useRef(0);
+  const userRef             = useRef<string | null>(null);
+  const subRef              = useRef<any>(null);
   const inputFocusedRef     = useRef(false);
   const typingTimerRef      = useRef<any>(null);
   const newBannerCheckedRef = useRef(false);
@@ -946,14 +929,17 @@ export default function App() {
 
   const other = user === "Hasan" ? "Saba" : "Hasan";
 
-  const nightChatBg    = "linear-gradient(160deg, #2a0f1a 0%, #1e0d16 50%, #2d1020 100%)";
-  const nightHeaderBg  = "#3d1020";
+  const nightChatBg       = "linear-gradient(160deg, #2a0f1a 0%, #1e0d16 50%, #2d1020 100%)";
+  const nightHeaderBg     = "#3d1020";
   const nightHeaderBorder = "#5a1830";
-  const dayChatBg  = user === "Saba" ? BG_SABA : user === "Hasan" ? BG_HASAN : BG;
-  const chatBg     = night ? nightChatBg : dayChatBg;
-  const headerBg   = night ? nightHeaderBg : "white";
-  const headerBorder  = night ? nightHeaderBorder : BR;
-  const headerMut  = night ? "rgba(255,255,255,0.55)" : MUT;
+  const dayChatBg         = user === "Saba" ? BG_SABA : user === "Hasan" ? BG_HASAN : BG;
+  const chatBg            = night ? nightChatBg : dayChatBg;
+  const headerBg          = night ? nightHeaderBg : "white";
+  const headerBorder      = night ? nightHeaderBorder : BR;
+  const headerMut         = night ? "rgba(255,255,255,0.55)" : MUT;
+
+  const nightOtherBg = other === "Hasan" ? NIGHT_OTHER_HASAN : NIGHT_OTHER_SABA;
+  const typingBubbleBg = night ? nightOtherBg : ul(other);
 
   const scrollToMsg = useCallback((id: string) => {
     document.getElementById(`msg-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1012,10 +998,20 @@ export default function App() {
       const { data: sabaSeen  } = await supabase.from("seen_status").select("last_seen").eq("username", "Saba").maybeSingle();
       const hasanLastSeen = hasanSeen?.last_seen || 0;
       const sabaLastSeen  = sabaSeen?.last_seen  || 0;
+
       const { data: allMsgs } = await supabase.from("messages").select("sender,ts,type").order("ts", { ascending: false }).limit(50);
       const ms = (allMsgs || []) as any[];
-      setHasanGlow(ms.some(m => m.sender === "Saba"  && m.ts > hasanLastSeen));
-      setSabaGlow (ms.some(m => m.sender === "Hasan" && m.ts > sabaLastSeen));
+
+      const hasanHasUnreadHeart = ms.some(m => m.sender === "Saba"  && m.ts > hasanLastSeen && (m.type === "heart" || m.type === "superheart"));
+      const sabaHasUnreadHeart  = ms.some(m => m.sender === "Hasan" && m.ts > sabaLastSeen  && (m.type === "heart" || m.type === "superheart"));
+
+      const hasanUnreadMsgs = ms.filter(m => m.sender === "Saba"  && m.ts > hasanLastSeen && m.type !== "heart" && m.type !== "superheart");
+      const sabaUnreadMsgs  = ms.filter(m => m.sender === "Hasan" && m.ts > sabaLastSeen  && m.type !== "heart" && m.type !== "superheart");
+
+      setHasanGlow(hasanHasUnreadHeart);
+      setSabaGlow(sabaHasUnreadHeart);
+      setHasanUnread(hasanUnreadMsgs.length);
+      setSabaUnread(sabaUnreadMsgs.length);
     } catch (e) {}
   };
 
@@ -1103,6 +1099,10 @@ export default function App() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
+    // Auto-resize
+    const ta = inputRef.current;
+    if (ta) { ta.style.height = "auto"; ta.style.height = `${ta.scrollHeight}px`; }
+    // Typing indicator
     updateTyping(true);
     clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => updateTyping(false), 2000);
@@ -1114,6 +1114,8 @@ export default function App() {
     if (!text && !extra.imageData) return;
     setSending(true);
     setInput("");
+    // Reset textarea height
+    if (inputRef.current) inputRef.current.style.height = "auto";
     const currentReply = replyTo;
     setReplyTo(null);
     updateTyping(false);
@@ -1235,8 +1237,7 @@ export default function App() {
   let lastSeenId: string | null = null;
   for (const m of myMsgs) { if (seenOther >= m.ts) lastSeenId = m.id; }
 
-  const pinnedMsgObj   = pinnedData ? msgs.find(m => m.id === pinnedData.message_id) : null;
-  const headerSubtitle = otherTyping ? `${other} is typing…` : fLastSeen(otherLastSeen);
+  const pinnedMsgObj = pinnedData ? msgs.find(m => m.id === pinnedData.message_id) : null;
 
   if (view === "jar") return (
     <>
@@ -1250,14 +1251,16 @@ export default function App() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0;font-family:'DM Sans',sans-serif}`}</style>
       <LoginScreen
         onLogin={name => {
-          if (name === "Hasan") setHasanGlow(false);
-          else setSabaGlow(false);
+          if (name === "Hasan") { setHasanGlow(false); setHasanUnread(0); }
+          else { setSabaGlow(false); setSabaUnread(0); }
           setUser(name);
           setView("chat");
         }}
         onJar={() => setView("jar")}
         hasanGlow={hasanGlow}
         sabaGlow={sabaGlow}
+        hasanUnread={hasanUnread}
+        sabaUnread={sabaUnread}
         night={night}
       />
     </>
@@ -1265,10 +1268,17 @@ export default function App() {
 
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0;}textarea,input{font-family:'DM Sans',sans-serif;}textarea:focus,input:focus{outline:none;}`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:wght@400;500&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        textarea,input{font-family:'DM Sans',sans-serif;}
+        textarea:focus,input:focus{outline:none;}
+        @keyframes typingDot{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}
+        @keyframes bubblePop{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
+      `}</style>
 
-      {lightboxSrc    && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
-      {heartBanner    && <HeartBanner sender={heartBanner.sender} isSuper={heartBanner.isSuper} onDismiss={() => setHeartBanner(null)} />}
+      {lightboxSrc     && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+      {heartBanner     && <HeartBanner sender={heartBanner.sender} isSuper={heartBanner.isSuper} onDismiss={() => setHeartBanner(null)} />}
       {deleteConfirmId && <DeleteConfirm onConfirm={() => { deleteMsg(deleteConfirmId); setDeleteConfirmId(null); }} onCancel={() => setDeleteConfirmId(null)} />}
       {showStatusPicker && <StatusPicker current={myStatus} onSet={setStatus} onClose={() => setShowStatusPicker(false)} />}
 
@@ -1276,62 +1286,60 @@ export default function App() {
         {night && <NightStars />}
         <BackgroundHeart count={myHeartCount} isSuper={canSuperHeart} night={night} />
 
-{/* Header */}
-<div style={{ background: headerBg, borderBottom: `1px solid ${headerBorder}`, minHeight: 72, display: "flex", flexDirection: "column", padding: "10px 16px 8px", flexShrink: 0, position: "relative", zIndex: 1 }}>
+        {/* Header */}
+        <div style={{ background: headerBg, borderBottom: `1px solid ${headerBorder}`, minHeight: 72, display: "flex", flexDirection: "column", padding: "10px 16px 8px", flexShrink: 0, position: "relative", zIndex: 1 }}>
 
-  {/* Top row — names + heart */}
-  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          {/* Top row — names + heart */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
 
-    {/* Left — other user */}
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 500, color: uc(other) }}>
-        {other}
-      </div>
-      <div style={{ fontSize: 11, color: otherTyping ? uc(other) : headerMut, marginTop: 1, letterSpacing: "0.02em", fontStyle: otherTyping ? "italic" : "normal" }}>
-        {otherTyping ? `${other} is typing…` : fLastSeen(otherLastSeen)}
-      </div>
-    </div>
+            {/* Left — other user */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 500, color: uc(other) }}>
+                {other}
+              </div>
+              <div style={{ fontSize: 11, color: otherTyping ? uc(other) : headerMut, marginTop: 1, letterSpacing: "0.02em", fontStyle: otherTyping ? "italic" : "normal" }}>
+                {otherTyping ? `${other} is typing…` : fLastSeen(otherLastSeen)}
+              </div>
+            </div>
 
-    {/* Centre — heart / logout */}
-    <button
-      onClick={() => { setUser(null); setView("login"); setMsgs([]); countRef.current = 0; }}
-      style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, color: night ? "rgba(255,100,130,0.8)" : "#d4a0a8", background: "none", border: "none", cursor: "pointer", padding: "0 12px", transition: "transform 0.15s", flexShrink: 0, lineHeight: 1 }}
-      onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.2)"}
-      onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"}>
-      ♡
-    </button>
+            {/* Centre — heart / logout */}
+            <button
+              onClick={() => { setUser(null); setView("login"); setMsgs([]); countRef.current = 0; }}
+              style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, color: night ? "rgba(255,100,130,0.8)" : "#d4a0a8", background: "none", border: "none", cursor: "pointer", padding: "0 12px", transition: "transform 0.15s", flexShrink: 0, lineHeight: 1 }}
+              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.2)"}
+              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"}>
+              ♡
+            </button>
 
-    {/* Right — current user */}
-    <div style={{ flex: 1, textAlign: "right", minWidth: 0 }}>
-      <div style={{ fontSize: 13, fontWeight: 500, color: night ? "white" : uc(user) }}>
-        {user}
-      </div>
-      <button
-        onClick={() => setShowStatusPicker(true)}
-        style={{ fontSize: 11, color: headerMut, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.04em", padding: 0, fontFamily: "'DM Sans', sans-serif", marginTop: 1, display: "block", width: "100%", textAlign: "right" }}>
-        {myStatus ? "" : "Set status"}
-      </button>
-    </div>
-  </div>
+            {/* Right — current user */}
+            <div style={{ flex: 1, textAlign: "right", minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: night ? "white" : uc(user) }}>
+                {user}
+              </div>
+              <button
+                onClick={() => setShowStatusPicker(true)}
+                style={{ fontSize: 11, color: headerMut, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.04em", padding: 0, fontFamily: "'DM Sans', sans-serif", marginTop: 1, display: "block", width: "100%", textAlign: "right" }}>
+                {myStatus ? "" : "Set status"}
+              </button>
+            </div>
+          </div>
 
-  {/* Bottom row — statuses, full width */}
-  {(otherStatus || myStatus) && (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
-      <div
-        style={{ fontSize: 12, color: headerMut, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {otherStatus}
-      </div>
-      {myStatus && (
-        <div
-          onClick={() => setShowStatusPicker(true)}
-          style={{ fontSize: 12, color: headerMut, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", textAlign: "right", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
-          {myStatus}
+          {/* Bottom row — statuses, full width */}
+          {(otherStatus || myStatus) && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: headerMut, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {otherStatus}
+              </div>
+              {myStatus && (
+                <div
+                  onClick={() => setShowStatusPicker(true)}
+                  style={{ fontSize: 12, color: headerMut, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", textAlign: "right", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
+                  {myStatus}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  )}
-
-</div>
 
         {pinnedMsgObj && <PinnedMessageBar msg={pinnedMsgObj} onScrollTo={() => scrollToMsg(pinnedMsgObj.id)} onUnpin={unpinMessage} night={night} />}
 
@@ -1366,13 +1374,17 @@ export default function App() {
               />
             )
           )}
+          {/* Typing bubble — appears as a fake message at the bottom */}
+          {otherTyping && (
+            <TypingBubble color={uc(other)} bubbleBg={typingBubbleBg} />
+          )}
           <div ref={bottomRef} />
         </div>
 
         {replyTo && <ReplyPreview replyTo={replyTo} onCancel={() => setReplyTo(null)} user={user} night={night} />}
 
         {/* Input bar */}
-<div style={{ background: headerBg, borderTop: `1px solid ${headerBorder}`, padding: "14px 12px 24px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0, position: "relative", zIndex: 1 }}>
+        <div style={{ background: headerBg, borderTop: `1px solid ${headerBorder}`, padding: "14px 12px 24px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0, position: "relative", zIndex: 1 }}>
           <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} style={{ display: "none" }} />
           <button onClick={() => fileRef.current?.click()}
             style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${night ? "#5a1830" : BR}`, background: night ? "rgba(255,255,255,0.08)" : "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>
@@ -1388,7 +1400,7 @@ export default function App() {
             onFocus={() => { inputFocusedRef.current = true; setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 150); }}
             onBlur={() => { inputFocusedRef.current = false; updateTyping(false); }}
             placeholder={`Message ${other}…`} rows={1}
-            style={{ flex: 1, border: `1.5px solid ${night ? "#5a1830" : BR}`, borderRadius: 20, padding: "9px 14px", fontSize: 14, color: night ? "white" : TXT, background: night ? "rgba(255,255,255,0.07)" : dayChatBg, resize: "none", minHeight: 38, maxHeight: 100, lineHeight: 1.4 }} />
+            style={{ flex: 1, border: `1.5px solid ${night ? "#5a1830" : BR}`, borderRadius: 20, padding: "9px 14px", fontSize: 14, color: night ? "white" : TXT, background: night ? "rgba(255,255,255,0.07)" : dayChatBg, resize: "none", minHeight: 38, maxHeight: 100, lineHeight: 1.4, overflowY: "auto" }} />
           <button onMouseDown={e => e.preventDefault()} onClick={() => send()} disabled={!input.trim() || sending}
             style={{ width: 38, height: 38, borderRadius: "50%", background: uc(user), border: "none", cursor: input.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: input.trim() ? 1 : 0.5, transition: "opacity 0.2s" }}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
