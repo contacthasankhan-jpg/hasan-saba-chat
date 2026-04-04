@@ -1276,37 +1276,51 @@ export default function App() {
         {night && <NightStars />}
         <BackgroundHeart count={myHeartCount} isSuper={canSuperHeart} night={night} />
 
-        {/* Header */}
-        <div style={{ background: headerBg, borderBottom: `1px solid ${headerBorder}`, minHeight: 60, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", flexShrink: 0, position: "relative", zIndex: 1 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 500, color: uc(other) }}>{other}</div>
-              {otherStatus && (
-                <div style={{ fontSize: 11, color: headerMut, background: night ? "rgba(255,255,255,0.08)" : "#fdf8f5", borderRadius: 10, padding: "2px 7px", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {otherStatus}
-                </div>
-              )}
-            </div>
-            <div style={{ fontSize: 11, color: otherTyping ? uc(other) : headerMut, marginTop: 1, letterSpacing: "0.02em", fontStyle: otherTyping ? "italic" : "normal" }}>
-              {headerSubtitle}
-            </div>
-          </div>
+      {/* Header */}
+<div style={{ background: headerBg, borderBottom: `1px solid ${headerBorder}`, minHeight: 72, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", flexShrink: 0, position: "relative", zIndex: 1 }}>
+  
+  {/* Left — other user */}
+  <div style={{ flex: 1, minWidth: 0 }}>
+    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 500, color: uc(other) }}>
+      {other}
+    </div>
+    {otherStatus && (
+      <div style={{ fontSize: 11, color: headerMut, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "90%" }}>
+        {otherStatus}
+      </div>
+    )}
+    <div style={{ fontSize: 11, color: otherTyping ? uc(other) : headerMut, marginTop: 1, letterSpacing: "0.02em", fontStyle: otherTyping ? "italic" : "normal" }}>
+      {otherTyping ? `${other} is typing…` : fLastSeen(otherLastSeen)}
+    </div>
+  </div>
 
-          <button onClick={() => { setUser(null); setView("login"); setMsgs([]); countRef.current = 0; }}
-            style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: night ? "rgba(255,100,130,0.8)" : "#d4a0a8", background: "none", border: "none", cursor: "pointer", padding: "0 12px", transition: "transform 0.15s" }}
-            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.2)"}
-            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"}>
-            ♡
-          </button>
+  {/* Centre — heart / logout */}
+  <button
+    onClick={() => { setUser(null); setView("login"); setMsgs([]); countRef.current = 0; }}
+    style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: night ? "rgba(255,100,130,0.8)" : "#d4a0a8", background: "none", border: "none", cursor: "pointer", padding: "0 12px", transition: "transform 0.15s", flexShrink: 0 }}
+    onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.2)"}
+    onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"}>
+    ♡
+  </button>
 
-          <div style={{ flex: 1, textAlign: "right" }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: night ? "white" : uc(user) }}>{user}</div>
-            <button onClick={() => setShowStatusPicker(true)}
-              style={{ fontSize: 11, color: headerMut, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.04em", padding: 0, fontFamily: "'DM Sans', sans-serif", marginTop: 1 }}>
-              {myStatus ? `${myStatus.slice(0, 16)}${myStatus.length > 16 ? "…" : ""}` : "Status"}
-            </button>
-          </div>
-        </div>
+  {/* Right — current user */}
+  <div style={{ flex: 1, textAlign: "right", minWidth: 0 }}>
+    <div style={{ fontSize: 13, fontWeight: 500, color: night ? "white" : uc(user) }}>
+      {user}
+    </div>
+    {myStatus && (
+      <div style={{ fontSize: 11, color: headerMut, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+        {myStatus.slice(0, 20)}{myStatus.length > 20 ? "…" : ""}
+      </div>
+    )}
+    <button
+      onClick={() => setShowStatusPicker(true)}
+      style={{ fontSize: 11, color: headerMut, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.04em", padding: 0, fontFamily: "'DM Sans', sans-serif", marginTop: 1, display: "block", width: "100%", textAlign: "right" }}>
+      {myStatus ? "Edit status" : "Set status"}
+    </button>
+  </div>
+
+</div>
 
         {pinnedMsgObj && <PinnedMessageBar msg={pinnedMsgObj} onScrollTo={() => scrollToMsg(pinnedMsgObj.id)} onUnpin={unpinMessage} night={night} />}
 
@@ -1347,7 +1361,7 @@ export default function App() {
         {replyTo && <ReplyPreview replyTo={replyTo} onCancel={() => setReplyTo(null)} user={user} night={night} />}
 
         {/* Input bar */}
-        <div style={{ background: headerBg, borderTop: `1px solid ${headerBorder}`, padding: "10px 12px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0, position: "relative", zIndex: 1 }}>
+<div style={{ background: headerBg, borderTop: `1px solid ${headerBorder}`, padding: "14px 12px 24px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0, position: "relative", zIndex: 1 }}>
           <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} style={{ display: "none" }} />
           <button onClick={() => fileRef.current?.click()}
             style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${night ? "#5a1830" : BR}`, background: night ? "rgba(255,255,255,0.08)" : "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>
