@@ -663,11 +663,45 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, hasanUnread, sabaUnr
           </div>
         )}
         <p style={{ fontSize: 16, color: night ? "rgba(212,160,168,0.55)" : MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>Tickle the tism'</p>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 46, fontWeight: 400, color: night ? "#f0d8e0" : TXT, marginBottom: 6, letterSpacing: -0.5, animation: night ? "nightTitleGlow 3s ease-in-out infinite" : "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
-          <span>Hasan</span>
-          <span style={{ color: H, fontSize: 36, lineHeight: 1 }}>♥</span>
-          <span>Saba</span>
-        </h1>
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: 320, marginBottom: 6 }}>
+  <span style={{
+    position: "absolute",
+    left: "50%",
+    transform: "translateX(-50%)",
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: 32,
+    color: night ? "rgba(255,100,130,0.8)" : "#d4a0a8",
+    lineHeight: 1,
+    animation: night ? "nightTitleGlow 3s ease-in-out infinite" : "none",
+  }}>
+    ♡
+  </span>
+  <span style={{
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: 46,
+    fontWeight: 400,
+    color: night ? "#f0d8e0" : TXT,
+    letterSpacing: -0.5,
+    animation: night ? "nightTitleGlow 3s ease-in-out infinite" : "none",
+    marginRight: "calc(50% + 10px)",
+    whiteSpace: "nowrap",
+  }}>
+    Hasan
+  </span>
+  <span style={{
+    position: "absolute",
+    left: "calc(50% + 26px)",
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: 46,
+    fontWeight: 400,
+    color: night ? "#f0d8e0" : TXT,
+    letterSpacing: -0.5,
+    animation: night ? "nightTitleGlow 3s ease-in-out infinite" : "none",
+    whiteSpace: "nowrap",
+  }}>
+    Saba
+  </span>
+</div>
         <p style={{ fontSize: 16, color: night ? "rgba(212,160,168,0.55)" : MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 52 }}>The Seventh Infinity Stone</p>
         <p style={{ fontSize: 11, color: night ? "rgba(212,160,168,0.4)" : MUT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18 }}>Who are you?</p>
 
