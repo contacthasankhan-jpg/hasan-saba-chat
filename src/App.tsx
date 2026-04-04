@@ -1276,28 +1276,28 @@ export default function App() {
         {night && <NightStars />}
         <BackgroundHeart count={myHeartCount} isSuper={canSuperHeart} night={night} />
 
-      {/* Header */}
-<div style={{ background: headerBg, borderBottom: `1px solid ${headerBorder}`, minHeight: 72, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", flexShrink: 0, position: "relative", zIndex: 1 }}>
-  
+{/* Header */}
+<div style={{ background: headerBg, borderBottom: `1px solid ${headerBorder}`, minHeight: 72, display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "10px 16px 8px", flexShrink: 0, position: "relative", zIndex: 1 }}>
+
   {/* Left — other user */}
   <div style={{ flex: 1, minWidth: 0 }}>
     <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 500, color: uc(other) }}>
       {other}
     </div>
-    {otherStatus && (
-      <div style={{ fontSize: 11, color: headerMut, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "90%" }}>
-        {otherStatus}
-      </div>
-    )}
     <div style={{ fontSize: 11, color: otherTyping ? uc(other) : headerMut, marginTop: 1, letterSpacing: "0.02em", fontStyle: otherTyping ? "italic" : "normal" }}>
       {otherTyping ? `${other} is typing…` : fLastSeen(otherLastSeen)}
     </div>
+    {otherStatus && (
+      <div style={{ fontSize: 12, color: headerMut, marginTop: 3, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "90%" }}>
+        {otherStatus}
+      </div>
+    )}
   </div>
 
   {/* Centre — heart / logout */}
   <button
     onClick={() => { setUser(null); setView("login"); setMsgs([]); countRef.current = 0; }}
-    style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: night ? "rgba(255,100,130,0.8)" : "#d4a0a8", background: "none", border: "none", cursor: "pointer", padding: "0 12px", transition: "transform 0.15s", flexShrink: 0 }}
+    style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, color: night ? "rgba(255,100,130,0.8)" : "#d4a0a8", background: "none", border: "none", cursor: "pointer", padding: "0 12px", paddingTop: 0, transition: "transform 0.15s", flexShrink: 0, alignSelf: "flex-start", lineHeight: 1 }}
     onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.2)"}
     onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"}>
     ♡
@@ -1308,16 +1308,18 @@ export default function App() {
     <div style={{ fontSize: 13, fontWeight: 500, color: night ? "white" : uc(user) }}>
       {user}
     </div>
-    {myStatus && (
-      <div style={{ fontSize: 11, color: headerMut, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
-        {myStatus.slice(0, 20)}{myStatus.length > 20 ? "…" : ""}
-      </div>
-    )}
     <button
       onClick={() => setShowStatusPicker(true)}
       style={{ fontSize: 11, color: headerMut, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.04em", padding: 0, fontFamily: "'DM Sans', sans-serif", marginTop: 1, display: "block", width: "100%", textAlign: "right" }}>
-      {myStatus ? "Edit status" : "Set status"}
+      {myStatus ? "" : "Set status"}
     </button>
+    {myStatus && (
+      <div
+        onClick={() => setShowStatusPicker(true)}
+        style={{ fontSize: 12, color: headerMut, marginTop: 3, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer", textAlign: "right" }}>
+        {myStatus}
+      </div>
+    )}
   </div>
 
 </div>
