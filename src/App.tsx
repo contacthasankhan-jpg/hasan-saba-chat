@@ -528,7 +528,8 @@ function CountdownWidget({ night }: { night: boolean }) {
     setShowEditor(false);
   };
 
-  const diff     = targetDate ? new Date(targetDate).getTime() + 86400000 - now : 0;
+  const [y, m, d] = targetDate ? targetDate.split("-").map(Number) : [0, 0, 0];
+const diff = targetDate ? new Date(y, m - 1, d + 1).getTime() - now : 0;
   const past     = diff <= 0;
   const totalSec = past ? 0 : Math.floor(diff / 1000);
   const days     = Math.floor(totalSec / 86400);
