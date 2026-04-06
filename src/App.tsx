@@ -917,6 +917,60 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
     </>
   );
 }
+// ── StatusPopup ───────────────────────────────────────────────────────────────
+function StatusPopup({ status, sender, onClose }: { status: string; sender: string; onClose: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 5000, display: "flex", alignItems: "center", justifyContent: "center", padding: 32, background: "rgba(180,80,100,0.08)", backdropFilter: "blur(2px)" }}>
+      <style>{`
+        @keyframes statusPop{0%{transform:scale(0.85);opacity:0}65%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
+        @keyframes heartFloat1{0%,100%{transform:translateY(0) rotate(-12deg);opacity:0.5}50%{transform:translateY(-8px) rotate(-12deg);opacity:0.9}}
+        @keyframes heartFloat2{0%,100%{transform:translateY(0) rotate(10deg);opacity:0.4}50%{transform:translateY(-6px) rotate(10deg);opacity:0.8}}
+        @keyframes heartFloat3{0%,100%{transform:translateY(0) rotate(-5deg);opacity:0.6}50%{transform:translateY(-10px) rotate(-5deg);opacity:1}}
+      `}</style>
+      <div onClick={e => e.stopPropagation()} style={{
+        position: "relative",
+        background: "linear-gradient(145deg, #fff0f3 0%, #fde8ee 50%, #fdf0f5 100%)",
+        borderRadius: "38% 62% 55% 45% / 45% 40% 60% 55%",
+        padding: "44px 36px 36px",
+        maxWidth: 280,
+        width: "100%",
+        textAlign: "center",
+        boxShadow: "0 8px 40px rgba(220,100,130,0.22), 0 2px 12px rgba(220,100,130,0.12), inset 0 1px 0 rgba(255,255,255,0.8)",
+        border: "1.5px solid rgba(240,160,180,0.4)",
+        animation: "statusPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards",
+      }}>
+        {/* Decorative floating hearts */}
+        <span style={{ position: "absolute", top: 10, left: 18, fontSize: 18, color: "#e8a0b8", animation: "heartFloat1 2.8s ease-in-out infinite" }}>♡</span>
+        <span style={{ position: "absolute", top: 14, right: 22, fontSize: 13, color: "#d4a0b0", animation: "heartFloat2 3.2s ease-in-out infinite" }}>♥</span>
+        <span style={{ position: "absolute", bottom: 18, left: 24, fontSize: 11, color: "#e0b0c0", animation: "heartFloat3 2.5s ease-in-out infinite" }}>♡</span>
+        <span style={{ position: "absolute", bottom: 22, right: 18, fontSize: 16, color: "#e8a0b8", animation: "heartFloat1 3s 0.4s ease-in-out infinite" }}>♡</span>
+
+        {/* Sender label */}
+        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 12, color: "#c08090", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>
+          {sender}'s status
+        </div>
+
+        {/* Big heart ornament */}
+        <div style={{ fontSize: 28, color: "#e0909c", marginBottom: 12, lineHeight: 1 }}>♡</div>
+
+        {/* The status text */}
+        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 400, color: "#7a3040", lineHeight: 1.4, letterSpacing: "0.02em", fontStyle: "italic" }}>
+          {status}
+        </div>
+
+        {/* Tap to close hint */}
+        <div style={{ marginTop: 18, fontSize: 10, color: "#c0a0a8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          tap to close
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
@@ -945,6 +999,7 @@ export default function App() {
   const [hasanUnread, setHasanUnread] = useState(0);
   const [sabaUnread, setSabaUnread] = useState(0);
   const [night, setNight] = useState(isNightMode());
+  const [statusPopup, setStatusPopup] = useState<{ status: string; sender: string } | null>(null);
 
   const bottomRef           = useRef<HTMLDivElement>(null);
   const inputRef            = useRef<HTMLTextAreaElement>(null);
@@ -1316,6 +1371,7 @@ export default function App() {
       {heartBanner     && <HeartBanner sender={heartBanner.sender} isSuper={heartBanner.isSuper} onDismiss={() => setHeartBanner(null)} />}
       {deleteConfirmId && <DeleteConfirm onConfirm={() => { deleteMsg(deleteConfirmId); setDeleteConfirmId(null); }} onCancel={() => setDeleteConfirmId(null)} />}
       {showStatusPicker && <StatusPicker current={myStatus} onSet={setStatus} onClose={() => setShowStatusPicker(false)} />}
+      {statusPopup && <StatusPopup status={statusPopup.status} sender={statusPopup.sender} onClose={() => setStatusPopup(null)} />}
 
       <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: chatBg, position: "relative" }}>
         {night && <NightStars />}
@@ -1359,21 +1415,25 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bottom row — statuses, full width */}
-          {(otherStatus || myStatus) && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
-              <div style={{ fontSize: 12, color: headerMut, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {otherStatus}
-              </div>
-              {myStatus && (
-                <div
-                  onClick={() => setShowStatusPicker(true)}
-                  style={{ fontSize: 12, color: headerMut, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", textAlign: "right", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
-                  {myStatus}
-                </div>
-              )}
-            </div>
-          )}
+     {/* Bottom row — statuses, full width */}
+{(otherStatus || myStatus) && (
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
+    {otherStatus && (
+      <div
+        onClick={() => setStatusPopup({ status: otherStatus, sender: other })}
+        style={{ fontSize: 12, color: headerMut, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
+        {otherStatus}
+      </div>
+    )}
+    {myStatus && (
+      <div
+        onClick={() => setStatusPopup({ status: myStatus, sender: user })}
+        style={{ fontSize: 12, color: headerMut, fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic", letterSpacing: "0.03em", textAlign: "right", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
+        {myStatus}
+      </div>
+    )}
+  </div>
+)}
         </div>
 
         {pinnedMsgObj && <PinnedMessageBar msg={pinnedMsgObj} onScrollTo={() => scrollToMsg(pinnedMsgObj.id)} onUnpin={unpinMessage} night={night} />}
