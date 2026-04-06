@@ -940,64 +940,73 @@ function StatusPopup({ status, sender, onClose }: { status: string; sender: stri
         }
       `}</style>
 
-      {/* Floating mini hearts — rise from cloud all the way to top */}
+      {/* Filled floating hearts */}
       {hearts.map((h, i) => (
         <div key={i} style={{
           position: "fixed",
           bottom: "42%",
           left: h.left,
           fontSize: h.size,
-          color: `hsl(${340 + (i * 7) % 30}, 70%, ${65 + (i * 3) % 20}%)`,
+          color: `hsl(${340 + (i * 7) % 30}, 75%, ${55 + (i * 3) % 15}%)`,
           ["--wobble" as any]: h.wobble,
           animation: `heartRise ${h.dur} ${h.delay} ease-in infinite`,
           pointerEvents: "none",
           userSelect: "none",
           lineHeight: 1,
         }}>
-          ♡
+          ♥
         </div>
       ))}
 
       {/* Thought bubble */}
-      <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", animation: "statusPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
 
-        {/* Trailing thought dots — bottom to top, leading into the main bubble */}
-        <div style={{ alignSelf: "flex-start", marginLeft: "22%", marginBottom: 4, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-          <div style={{ width: 10, height: 10, borderRadius: "50%", background: "linear-gradient(135deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.5)", boxShadow: "0 2px 8px rgba(220,100,130,0.15)" }} />
-          <div style={{ width: 16, height: 16, borderRadius: "50%", background: "linear-gradient(135deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.5)", boxShadow: "0 2px 8px rgba(220,100,130,0.15)" }} />
-          <div style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.5)", boxShadow: "0 2px 8px rgba(220,100,130,0.15)" }} />
+        {/* SVG cloud shape */}
+        <div style={{ position: "relative", width: 280 }}>
+          <svg viewBox="0 0 280 180" width="280" style={{ display: "block", filter: "drop-shadow(0 8px 24px rgba(220,100,130,0.22))" }}>
+            {/* Cloud path — bumpy top, flat-ish bottom, tail bottom-left */}
+            <path d="
+              M 60 150
+              Q 30 150 25 130
+              Q 10 128 10 112
+              Q 8 95 22 88
+              Q 18 75 28 65
+              Q 35 50 52 50
+              Q 55 35 70 28
+              Q 88 18 108 26
+              Q 118 14 135 12
+              Q 155 8 168 22
+              Q 182 14 198 20
+              Q 218 16 228 34
+              Q 246 36 252 54
+              Q 264 60 262 78
+              Q 272 88 268 104
+              Q 270 122 254 130
+              Q 250 148 228 150
+              Z
+            " fill="#fde8ee" stroke="rgba(210,130,155,0.5)" strokeWidth="2" strokeLinejoin="round" />
+          </svg>
+
+          {/* Content overlaid on the SVG */}
+          <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 28px 20px" }}>
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 11, color: "#c08090", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 6 }}>
+              {sender}'s status
+            </div>
+            <div style={{ fontSize: 20, color: "#e0909c", marginBottom: 8, lineHeight: 1 }}>♡</div>
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 19, fontWeight: 400, color: "#7a3040", lineHeight: 1.4, letterSpacing: "0.02em", fontStyle: "italic", textAlign: "center" }}>
+              {status}
+            </div>
+            <div style={{ marginTop: 10, fontSize: 9, color: "#c0a0a8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              tap to close
+            </div>
+          </div>
         </div>
 
-        {/* Main thought bubble */}
-        <div style={{
-          position: "relative",
-          background: "linear-gradient(160deg, #fff5f7 0%, #fde8ee 60%, #fff0f5 100%)",
-          borderRadius: 32,
-          padding: "36px 32px 28px",
-          maxWidth: 260,
-          width: "100%",
-          textAlign: "center",
-          boxShadow: "0 8px 40px rgba(220,100,130,0.18), inset 0 2px 0 rgba(255,255,255,0.9)",
-          border: "1.5px solid rgba(240,160,180,0.4)",
-          animation: "statusPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards",
-        }}>
-          {/* Sender label */}
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 11, color: "#c08090", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 8 }}>
-            {sender}'s status
-          </div>
-
-          {/* Heart ornament */}
-          <div style={{ fontSize: 24, color: "#e0909c", marginBottom: 10, lineHeight: 1 }}>♡</div>
-
-          {/* Status text */}
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 21, fontWeight: 400, color: "#7a3040", lineHeight: 1.45, letterSpacing: "0.02em", fontStyle: "italic" }}>
-            {status}
-          </div>
-
-          {/* Tap to close */}
-          <div style={{ marginTop: 16, fontSize: 10, color: "#c0a0a8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-            tap to close
-          </div>
+        {/* Trailing thought dots — small to large, bottom-left of bubble */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginTop: -4, marginLeft: 48 }}>
+          <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fde8ee", border: "1.5px solid rgba(210,130,155,0.5)", boxShadow: "0 2px 8px rgba(220,100,130,0.15)" }} />
+          <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#fde8ee", border: "1.5px solid rgba(210,130,155,0.4)" }} />
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#fde8ee", border: "1.5px solid rgba(210,130,155,0.3)" }} />
         </div>
       </div>
     </div>
