@@ -924,9 +924,9 @@ function StatusPopup({ status, sender, onClose }: { status: string; sender: stri
     return () => clearTimeout(t);
   }, [onClose]);
 
-  const bubbles = Array.from({ length: 18 }, (_, i) => ({
+  const hearts = Array.from({ length: 18 }, (_, i) => ({
     left: `${8 + (i * 13.7 + 7) % 82}%`,
-    size: 10 + (i * 7) % 18,
+    size: 10 + (i * 7) % 16,
     delay: `${(i * 0.28) % 3}s`,
     dur: `${2.2 + (i * 0.3) % 2}s`,
     wobble: `${(i % 2 === 0 ? "" : "-")}${6 + (i * 3) % 10}px`,
@@ -936,73 +936,73 @@ function StatusPopup({ status, sender, onClose }: { status: string; sender: stri
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 5000, display: "flex", alignItems: "center", justifyContent: "center", padding: 32, background: "rgba(180,80,100,0.06)", backdropFilter: "blur(2px)", overflow: "hidden" }}>
       <style>{`
         @keyframes statusPop{0%{transform:scale(0.85);opacity:0}65%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
-        @keyframes bubbleRise{
-          0%{transform:translateY(0) translateX(0) scale(1);opacity:0.85}
-          25%{transform:translateY(-25vh) translateX(var(--wobble)) scale(0.95);opacity:0.75}
-          50%{transform:translateY(-50vh) translateX(0) scale(0.85);opacity:0.6}
-          75%{transform:translateY(-75vh) translateX(var(--wobble)) scale(0.7);opacity:0.35}
-          100%{transform:translateY(-102vh) translateX(0) scale(0.4);opacity:0}
+        @keyframes heartRise{
+          0%{transform:translateY(0) translateX(0) scale(1) rotate(-10deg);opacity:0.9}
+          25%{transform:translateY(-25vh) translateX(var(--wobble)) scale(0.9) rotate(5deg);opacity:0.75}
+          50%{transform:translateY(-50vh) translateX(0) scale(0.75) rotate(-5deg);opacity:0.55}
+          75%{transform:translateY(-75vh) translateX(var(--wobble)) scale(0.55) rotate(8deg);opacity:0.3}
+          100%{transform:translateY(-102vh) translateX(0) scale(0.2) rotate(-10deg);opacity:0}
         }
       `}</style>
 
-      {/* Floating bubbles — rise from behind the cloud all the way to top */}
-      {bubbles.map((b, i) => (
+      {/* Floating mini hearts — rise from cloud all the way to top */}
+      {hearts.map((h, i) => (
         <div key={i} style={{
           position: "fixed",
-          bottom: "38%",
-          left: b.left,
-          width: b.size,
-          height: b.size,
-          borderRadius: "50%",
-          border: "1.5px solid rgba(220,130,160,0.6)",
-          background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.7), rgba(255,180,200,0.25))",
-          ["--wobble" as any]: b.wobble,
-          animation: `bubbleRise ${b.dur} ${b.delay} ease-in infinite`,
+          bottom: "42%",
+          left: h.left,
+          fontSize: h.size,
+          color: `hsl(${340 + (i * 7) % 30}, 70%, ${65 + (i * 3) % 20}%)`,
+          ["--wobble" as any]: h.wobble,
+          animation: `heartRise ${h.dur} ${h.delay} ease-in infinite`,
           pointerEvents: "none",
-          boxShadow: "inset 0 1px 2px rgba(255,255,255,0.5)",
-        }} />
+          userSelect: "none",
+          lineHeight: 1,
+        }}>
+          ♡
+        </div>
       ))}
 
-      {/* Cloud shape */}
-      <div onClick={e => e.stopPropagation()} style={{
-        position: "relative",
-        background: "linear-gradient(160deg, #fff5f7 0%, #fde8ee 60%, #fff0f5 100%)",
-        borderRadius: "50% 50% 40% 40% / 60% 60% 40% 40%",
-        padding: "40px 32px 32px",
-        maxWidth: 270,
-        width: "100%",
-        textAlign: "center",
-        boxShadow: `
-          0 0 0 18px rgba(255,220,230,0.35),
-          0 0 0 36px rgba(255,210,225,0.18),
-          0 12px 48px rgba(220,100,130,0.18),
-          inset 0 2px 0 rgba(255,255,255,0.9)
-        `,
-        border: "1.5px solid rgba(240,160,180,0.35)",
-        animation: "statusPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards",
-        zIndex: 1,
-      }}>
-        {/* Cloud bumps — pseudo-circles on top to make it look like a cloud */}
-        <div style={{ position: "absolute", top: -22, left: "18%", width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(160deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.3)", boxShadow: "0 0 0 10px rgba(255,220,230,0.2)" }} />
-        <div style={{ position: "absolute", top: -34, left: "38%", width: 70, height: 70, borderRadius: "50%", background: "linear-gradient(160deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.3)", boxShadow: "0 0 0 10px rgba(255,220,230,0.2)" }} />
-        <div style={{ position: "absolute", top: -22, right: "16%", width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(160deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.3)", boxShadow: "0 0 0 10px rgba(255,220,230,0.2)" }} />
+      {/* Thought bubble */}
+      <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
 
-        {/* Sender label */}
-        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 11, color: "#c08090", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 8 }}>
-          {sender}'s status
+        {/* Trailing thought dots — bottom to top, leading into the main bubble */}
+        <div style={{ alignSelf: "flex-start", marginLeft: "22%", marginBottom: 4, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: "linear-gradient(135deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.5)", boxShadow: "0 2px 8px rgba(220,100,130,0.15)" }} />
+          <div style={{ width: 16, height: 16, borderRadius: "50%", background: "linear-gradient(135deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.5)", boxShadow: "0 2px 8px rgba(220,100,130,0.15)" }} />
+          <div style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#fff5f7,#fde8ee)", border: "1.5px solid rgba(240,160,180,0.5)", boxShadow: "0 2px 8px rgba(220,100,130,0.15)" }} />
         </div>
 
-        {/* Heart ornament */}
-        <div style={{ fontSize: 24, color: "#e0909c", marginBottom: 10, lineHeight: 1 }}>♡</div>
+        {/* Main thought bubble */}
+        <div style={{
+          position: "relative",
+          background: "linear-gradient(160deg, #fff5f7 0%, #fde8ee 60%, #fff0f5 100%)",
+          borderRadius: 32,
+          padding: "36px 32px 28px",
+          maxWidth: 260,
+          width: "100%",
+          textAlign: "center",
+          boxShadow: "0 8px 40px rgba(220,100,130,0.18), inset 0 2px 0 rgba(255,255,255,0.9)",
+          border: "1.5px solid rgba(240,160,180,0.4)",
+          animation: "statusPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards",
+        }}>
+          {/* Sender label */}
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 11, color: "#c08090", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 8 }}>
+            {sender}'s status
+          </div>
 
-        {/* Status text */}
-        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 21, fontWeight: 400, color: "#7a3040", lineHeight: 1.45, letterSpacing: "0.02em", fontStyle: "italic" }}>
-          {status}
-        </div>
+          {/* Heart ornament */}
+          <div style={{ fontSize: 24, color: "#e0909c", marginBottom: 10, lineHeight: 1 }}>♡</div>
 
-        {/* Tap to close */}
-        <div style={{ marginTop: 16, fontSize: 10, color: "#c0a0a8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          tap to close
+          {/* Status text */}
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 21, fontWeight: 400, color: "#7a3040", lineHeight: 1.45, letterSpacing: "0.02em", fontStyle: "italic" }}>
+            {status}
+          </div>
+
+          {/* Tap to close */}
+          <div style={{ marginTop: 16, fontSize: 10, color: "#c0a0a8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            tap to close
+          </div>
         </div>
       </div>
     </div>
