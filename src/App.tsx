@@ -61,8 +61,7 @@ const isEmojiOnly = (text: string): boolean => {
   const matches = trimmed.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu);
   return emojiRegex.test(trimmed) && matches !== null && matches.length <= 6;
 };
-const isNightMode = () => { const h = new Date().getHours(); return h >= 21 || h < 5; };
-
+const isNightMode = () => true;
 const STARS = Array.from({ length: 60 }, (_, i) => ({
   left: `${(i * 37.3 + 11) % 100}%`,
   top: `${(i * 53.7 + 7) % 100}%`,
@@ -658,11 +657,7 @@ function LoginScreen({ onLogin, onJar, hasanGlow, sabaGlow, hasanUnread, sabaUnr
         </div>
 
         {/* Title block */}
-        {night && (
-          <div style={{ fontSize: 11, color: "rgba(212,160,168,0.55)", letterSpacing: "0.18em", textTransform: "uppercase", animation: "nightFade 1.5s ease", marginBottom: 14 }}>
-            🌙   night mode   🌙
-          </div>
-        )}
+  
         <p style={{ fontSize: 16, color: night ? "rgba(212,160,168,0.55)" : MUT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>Tickle the tism'</p>
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: 320, marginBottom: 6 }}>
   <span style={{
@@ -1049,10 +1044,7 @@ export default function App() {
   const newBannerCheckedRef = useRef(false);
 
   useEffect(() => { userRef.current = user; }, [user]);
-  useEffect(() => {
-    const t = setInterval(() => setNight(isNightMode()), 60000);
-    return () => clearInterval(t);
-  }, []);
+ 
 
   const other = user === "Hasan" ? "Saba" : "Hasan";
 
