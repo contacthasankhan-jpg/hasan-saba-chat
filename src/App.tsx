@@ -780,7 +780,7 @@ function MsgItem({ msg, user, isSeenLast, isFirstInRun, onReact, onDelete, onRep
   const mine      = msg.sender === user;
   const color     = uc(msg.sender);
   const light     = ul(msg.sender);
-  const reactions = Object.entries(msg.reactions || {}).filter(([, u]) => u.length > 0);
+  const reactions = Object.entries(msg.reactions && typeof msg.reactions === 'object' ? msg.reactions : {}).filter(([, u]) => u.length > 0);
   const emojiOnly  = msg.text && msg.type !== "heart" && msg.type !== "superheart" ? isEmojiOnly(msg.text) : false;
   const emojiCount = emojiOnly && msg.text ? (msg.text.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu) || []).length : 0;
   const emojiFontSize = emojiCount === 1 ? 52 : emojiCount <= 3 ? 42 : 34;
