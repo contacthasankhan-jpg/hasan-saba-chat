@@ -599,7 +599,7 @@ onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "scal
 ))}
 </div>
 <div style={{ fontSize: 11, color: mutColor, letterSpacing: "0.06em" }}>
-{new Date(targetDate).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+  {new Date(y, m - 1, d).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
 </div>
 </>
 )}
