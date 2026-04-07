@@ -1043,6 +1043,7 @@ export default function App() {
   const [statusPopup, setStatusPopup] = useState<{ status: string; sender: string } | null>(null);
 
   const bottomRef           = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef            = useRef<HTMLTextAreaElement>(null);
   const fileRef             = useRef<HTMLInputElement>(null);
   const countRef            = useRef(0);
@@ -1208,17 +1209,24 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
-    if (!inputFocusedRef.current) return;
-    const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    return () => clearTimeout(t);
-  }, [msgs]);
+  const t = setTimeout(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, 100);
+  return () => clearTimeout(t);
+}, [msgs]);
 
   useEffect(() => {
-    if (!loading && msgs.length > 0) {
-      const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "instant" }), 150);
-      return () => clearTimeout(t);
-    }
-  }, [loading]);
+  if (!loading && msgs.length > 0) {
+    const t = setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }
+}, [loading]);
 
   const handleReply = (msg: Message) => {
     setReplyTo({ id: msg.id, sender: msg.sender, text: msg.text, imageData: msg.imageData });
@@ -1475,7 +1483,7 @@ export default function App() {
         {pinnedMsgObj && <PinnedMessageBar msg={pinnedMsgObj} onScrollTo={() => scrollToMsg(pinnedMsgObj.id)} onUnpin={unpinMessage} night={night} />}
 
         {/* Messages */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 6, position: "relative", zIndex: 1 }}>
+        <div ref={scrollContainerRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 6, position: "relative", zIndex: 1 }}>
           {newMsgBanner && (
             <NewMsgBanner count={newMsgBanner.count} onJump={() => { scrollToMsg(newMsgBanner.firstId); setNewMsgBanner(null); }} onDismiss={() => setNewMsgBanner(null)} />
           )}
