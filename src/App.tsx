@@ -1236,32 +1236,32 @@ export default function App() {
     typingTimerRef.current = setTimeout(() => updateTyping(false), 2000);
   };
 
- const send = async (extra: { imageData?: string } = {}) => {
-  if (sending) return;
-  const text = input.trim();
-  if (!text && !extra.imageData) return;
-  setSending(true);
-  console.log("SENDING:", { text, sending }); // ← ADD THIS
-  setInput("");
-  if (inputRef.current) inputRef.current.style.height = "auto";
-  const currentReply = replyTo;
-  setReplyTo(null);
-  updateTyping(false);
-  clearTimeout(typingTimerRef.current);
-  const nm: Message = {
-    id: crypto.randomUUID(),
-    sender: user!, text: text || null, imageData: extra.imageData || null,
-    gifUrl: null, reactions: {}, ts: Date.now(),
-    replyTo: currentReply || null, type: "text", starred: false, edited: false,
+   const send = async (extra: { imageData?: string } = {}) => {
+    if (sending) return;
+    const text = input.trim();
+    if (!text && !extra.imageData) return;
+    setSending(true);
+    setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
+    const currentReply = replyTo;
+    setReplyTo(null);
+    updateTyping(false);
+    clearTimeout(typingTimerRef.current);
+    const nm: Message = {
+      id: crypto.randomUUID(),
+      sender: user!, text: text || null, imageData: extra.imageData || null,
+      gifUrl: null, reactions: {}, ts: Date.now(),
+      replyTo: currentReply || null, type: "text", starred: false, edited: false,
+    };
+    try {
+      const { error } = await supabase.from("messages").insert(nm);
+      if (error) throw error;
+      await loadMsgs();
+    } catch (e) { console.error("send error:", e); }
+    setSending(false);
+    setTimeout(() => { inputRef.current?.focus(); inputRef.current?.scrollIntoView({ block: "nearest" }); }, 50);
+    await updateSeen();
   };
-  console.log("INSERTING:", nm); // ← ADD THIS
-  try {
-    const { error } = await supabase.from("messages").insert(nm);
-    console.log("INSERT RESULT:", error); // ← ADD THIS
-    if (error) throw error;
-    await loadMsgs();
-  } catch (e) { console.error("send error:", e); }
-  setSending(false);
 
   const sendHeart = async (isSuper = false) => {
     const recipient = user === "Hasan" ? "Saba" : "Hasan";
@@ -1281,7 +1281,6 @@ export default function App() {
       await loadMsgs();
     } catch (e) { console.error("sendHeart error:", e); }
   };
-
   const deleteMsg = async (id: string) => {
     try { await supabase.from("messages").delete().eq("id", id); await loadMsgs(); } catch (e) {}
   };
