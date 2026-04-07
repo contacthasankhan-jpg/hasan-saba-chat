@@ -1249,7 +1249,7 @@ export default function App() {
     updateTyping(false);
     clearTimeout(typingTimerRef.current);
     const nm: Message = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+     id: crypto.randomUUID(),
       sender: user!, text: text || null, imageData: extra.imageData || null,
       gifUrl: null, reactions: {}, ts: Date.now(),
       replyTo: currentReply || null, type: "text", starred: false, edited: false,
@@ -1267,7 +1267,7 @@ export default function App() {
   const sendHeart = async (isSuper = false) => {
     const recipient = user === "Hasan" ? "Saba" : "Hasan";
     const heartMsg: Message = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: crypto.randomUUID(),
       sender: user!, text: null, imageData: null, gifUrl: null,
       reactions: {}, ts: Date.now(), type: isSuper ? "superheart" : "heart", starred: false, edited: false,
     };
