@@ -1117,7 +1117,7 @@ export default function App() {
       setOtherStatus(otherStatusData?.status || "");
 
       return messages;
-    } catch (e) { console.error("loadMsgs error:", e); setMsgs([]); return []; }
+    } catch (e) { console.error("loadMsgs error:", e); return []; }
   };
 
   const loadGlowState = async () => {
